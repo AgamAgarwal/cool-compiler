@@ -9,7 +9,7 @@
 int main() {
 	char s[100];
 	printf("Enter the string: ");
-	scanf("%s", s);	//get the string
+	scanf("%[^\n]", s);	//get the string
 	int i=strlen(s);	//get its length
 	while(--i>=0)	//decrease i and check if more than 0
 		printf("%c", s[i]);	//print character
