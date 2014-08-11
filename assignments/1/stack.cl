@@ -43,7 +43,11 @@ class Stack {	--implementation of a single stack
 		fi
 	};
 	peek():String {	--returns the value stored by the topmost item without removing it
-		top.getValue()
+		if not isvoid top then
+			top.getValue()
+		else
+			""
+		fi
 	};
 	display():Object {	--prints the current stack from top to bottom, one item per line
 		let io:IO<-new IO, node:Node<-top in	--initialize the object for input-output, and a Node object for traversal through the stack
