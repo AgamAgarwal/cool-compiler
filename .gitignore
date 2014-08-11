@@ -1,0 +1,8 @@
+#Compiled programs
+*.out
+*.s
+
+#Packages
+*.tgz
+*.tar
+*.gz
