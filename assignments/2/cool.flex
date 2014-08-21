@@ -50,7 +50,8 @@ int comment_count=0;
  */
 
 DARROW          =>
-
+LE				<=
+ASSIGN			<-
 
 %x COMMENT
 %%
@@ -58,7 +59,12 @@ DARROW          =>
  /*
   *  Nested comments
   */
-  
+
+--.*	{	/*single line comment*/ }
+"*)"	{
+		cool_yylval.error_msg="Unmatched *)";
+		return (ERROR);
+		}
 "(*"	{
 		BEGIN(COMMENT);	//comment begins
 		comment_count++;
@@ -71,13 +77,22 @@ DARROW          =>
 				if(comment_count==0)
 					BEGIN(INITIAL);	//comments ends
 				}
-<COMMENT>(.|\n)	{	/*ignore text inside comments*/ }
+<COMMENT>\n		{ curr_lineno++; }
+<COMMENT>.	{	/*ignore text inside comments*/ }
+<COMMENT><<EOF>>	{
+					BEGIN(INITIAL);
+					comment_count=0;
+					cool_yylval.error_msg="EOF in comment";
+					return (ERROR);
+					}
 
 
  /*
   *  The multiple-character operators.
   */
 {DARROW}		{ return (DARROW); }
+{LE}			{ return (LE); }
+{ASSIGN}		{ return (ASSIGN); }
 
  /*
   * Keywords are case-insensitive except for the values true and false,

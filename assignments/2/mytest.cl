@@ -1,7 +1,7 @@
 class Main {
-b:Bool<-True;
-main():Object {
-b (* (* in *) in *)
-};
-
-};
+b:Bool<-true;
+main():Object {{
+b<-fAlSe; (* (* in *) in *)
+b;	--this is test
+}};
+}; (*
