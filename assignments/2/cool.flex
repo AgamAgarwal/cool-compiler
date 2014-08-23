@@ -52,6 +52,13 @@ int comment_count=0;
 DARROW          =>
 LE				<=
 ASSIGN			<-
+LETTER			[a-zA-Z]
+DIGIT			[0-9]
+ULETTER			[A-Z]
+LLETTER			[a-z]
+WHITESPACE		[ \n\f\r\t\v]
+TYPEID			{ULETTER}({LETTER}|{DIGIT}|_)*
+OBJECTID		{LLETTER}({LETTER}|{DIGIT}|_)*
 
 %x COMMENT
 %%
@@ -126,6 +133,26 @@ ASSIGN			<-
 t[rR][uU][eE]	{ cool_yylval.boolean=true; return (BOOL_CONST); }
 f[aA][lL][sS][eE]	{ cool_yylval.boolean=false; return (BOOL_CONST); }
 
+ /*
+  *  TypeID and ObjectID. TypeID must begin with an uppercase letter while ObjectID must begin with a lowercase letter.
+  */
+
+{TYPEID}	{
+			cool_yylval.symbol=idtable.add_string(yytext);
+			return (TYPEID);
+			}
+{OBJECTID}	{
+			cool_yylval.symbol=idtable.add_string(yytext);
+			return (OBJECTID);
+			}
+
+ /*
+  * Numbers
+  */
+{DIGIT}+	{
+			cool_yylval.symbol=inttable.add_string(yytext);
+			return (INT_CONST);
+			}
 
  /*
   *  String constants (C syntax)
@@ -135,4 +162,10 @@ f[aA][lL][sS][eE]	{ cool_yylval.boolean=false; return (BOOL_CONST); }
   */
 
 
+
+ /*
+  *  Whitespace characters
+  */
+
+{WHITESPACE}*	{ /*Ignore*/ }
 %%
