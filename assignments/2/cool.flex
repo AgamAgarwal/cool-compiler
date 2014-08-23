@@ -42,6 +42,9 @@ extern YYSTYPE cool_yylval;
 /*
  *  Add Your own definitions here
  */
+bool add_character_to_string_buffer(char);
+int string_too_long();
+#define ADD_CHAR(c) if(!add_character_to_string_buffer( (c) )) return string_too_long()
 int comment_count=0;
 %}
 
@@ -60,7 +63,7 @@ WHITESPACE		[ \n\f\r\t\v]
 TYPEID			{ULETTER}({LETTER}|{DIGIT}|_)*
 OBJECTID		{LLETTER}({LETTER}|{DIGIT}|_)*
 
-%x COMMENT
+%x COMMENT STRING IGNORE_STRING
 %%
 
  /*
@@ -160,12 +163,79 @@ f[aA][lL][sS][eE]	{ cool_yylval.boolean=false; return (BOOL_CONST); }
   *  \n \t \b \f, the result is c.
   *
   */
+\"	{
+	BEGIN(STRING);	//string begins
+	string_buf_ptr=string_buf;	//set the buffer pointer to the beginning of the buffer
+	}
+<STRING>\"	{	//end of string constant
+			*string_buf_ptr='\0';	//terminate the formed string
+			cool_yylval.symbol=stringtable.add_string(string_buf);
+			BEGIN(INITIAL);
+			return (STR_CONST);
+			}
+<STRING>\n	{	// newline within a string
+			cool_yylval.error_msg="Unterminated string constant";
+			curr_lineno++;
+			BEGIN(INITIAL);
+			return (ERROR);
+			}
+<STRING>\\n	{	//escaped n to mean newline
+			ADD_CHAR('\n');
+			}
+<STRING>\\t	{	//escaped t to mean horizontal tab
+			ADD_CHAR('\t');
+			}
+<STRING>\\b	{	//escaped b to mean backspace
+			ADD_CHAR('\b');
+			}
+<STRING>\\f	{	//escaped f to mean formfeed
+			ADD_CHAR('\f');
+			}
+<STRING>\\\n	{	//escaped newline
+				ADD_CHAR('\n');
+				curr_lineno++;
+				}
+<STRING>\\[^\0]	{	//any escaped character except \0
+				ADD_CHAR(yytext[1]);	//ignoring the backslash and add the character after that. Note - The special case of escaped newline has already been handled above
+				}
+<STRING>\0	{	//null character
+			cool_yylval.error_msg="Null character in string constant";
+			return (ERROR);
+			}
+<STRING><<EOF>>	{
+				BEGIN(INITIAL);
+				cool_yylval.error_msg="EOF in string constant";
+				return (ERROR);
+				}
+				
+<STRING>.	{	//for every character(other than \n, ofcourse). Note - The special case of \n has been handled above.
+			ADD_CHAR(yytext[0]);//get the first(and only) character
+			}
 
+ /*
+  * Ignore characters of the string in case of long string or invalid character
+  */
+<IGNORE_STRING>\\\n	{ /* Escaped newline */ }
+<IGNORE_STRING>(\n|\")	{ BEGIN(INITIAL); }
+<IGNORE_STRING>.	{ /* Any other character */ }
 
-
+ /*
+  * Counting line number
+  */
+\n	{ curr_lineno++; }
  /*
   *  Whitespace characters
   */
-
-{WHITESPACE}*	{ /*Ignore*/ }
+{WHITESPACE}	{ /* Ignore all whitespaces. Note that adding a '*' at the end would stop us from counting the lines */ }
 %%
+bool add_character_to_string_buffer(char c) {
+	if(string_buf_ptr-string_buf>MAX_STR_CONST)
+		return false;
+	*string_buf_ptr++=c;
+	return true;
+}
+int string_too_long() {
+	cool_yylval.error_msg="String constant too long";
+	BEGIN(IGNORE_STRING);
+	return (ERROR);
+}
