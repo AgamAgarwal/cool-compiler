@@ -227,6 +227,18 @@ f[aA][lL][sS][eE]	{ cool_yylval.boolean=false; return (BOOL_CONST); }
   *  Whitespace characters
   */
 {WHITESPACE}	{ /* Ignore all whitespaces. Note that adding a '*' at the end would stop us from counting the lines */ }
+
+ /*
+  * Allowed single characters
+  */
+[-+*/~<=(){};:,.]	{	//return the single character
+					return yytext[0];
+					}
+.	{	//all other characters
+	cool_yylval.error_msg=yytext;
+	return (ERROR);
+	}
+	
 %%
 bool add_character_to_string_buffer(char c) {
 	if(string_buf_ptr-string_buf>MAX_STR_CONST)
