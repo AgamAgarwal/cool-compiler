@@ -231,7 +231,7 @@ f[aA][lL][sS][eE]	{ cool_yylval.boolean=false; return (BOOL_CONST); }
  /*
   * Allowed single characters
   */
-[-+*/~<=(){};:,.]	{	//return the single character
+[-+*/~<=(){};:,.@]	{	//return the single character
 					return yytext[0];
 					}
 .	{	//all other characters
