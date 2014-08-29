@@ -452,8 +452,8 @@ static void yy_fatal_error (yyconst char msg[]  );
 	(yy_c_buf_p) = yy_cp;
 
 /* %% [4.0] data tables for the DFA and the user's section 1 definitions go here */
-#define YY_NUM_RULES 52
-#define YY_END_OF_BUFFER 53
+#define YY_NUM_RULES 53
+#define YY_END_OF_BUFFER 54
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -463,18 +463,18 @@ struct yy_trans_info
 	};
 static yyconst flex_int16_t yy_accept[178] =
     {   0,
-        0,    0,    0,    0,    0,    0,    0,    0,   53,   51,
-       49,   48,   33,   50,   50,   50,   50,   32,   50,   50,
+        0,    0,    0,    0,    0,    0,    0,    0,   54,   52,
+       50,   49,   33,   51,   51,   51,   51,   32,   51,   51,
        30,   30,   30,   30,   30,   30,   30,   30,   30,   30,
        30,   31,   31,   31,   31,   31,   31,   31,   31,   31,
        31,   31,    7,    6,    7,    7,   44,   35,   34,   44,
-       43,   47,   46,   46,   47,    3,    2,    1,   32,   10,
+       43,   48,   45,   47,   48,    3,    2,    1,   32,   10,
         9,    8,   30,   30,   30,   30,   30,   14,   11,   19,
        30,   30,   30,   30,   30,   21,   30,   30,   30,   31,
        31,   31,   31,   31,   31,   14,   11,   19,   31,   31,
        31,   31,   31,   21,   31,   31,   31,   31,    4,    5,
 
-       42,   40,   38,   39,   36,   37,   41,   45,    1,   30,
+       42,   40,   38,   39,   36,   37,   41,   46,    1,   30,
        30,   30,   30,   30,   30,   18,   30,   23,   25,   30,
        30,   30,   31,   31,   31,   31,   31,   31,   31,   18,
        31,   23,   25,   31,   31,   31,   31,   20,   30,   13,
@@ -670,14 +670,14 @@ static char *yy_last_accepting_cpos;
 extern int yy_flex_debug;
 int yy_flex_debug = 1;
 
-static yyconst flex_int16_t yy_rule_linenum[52] =
+static yyconst flex_int16_t yy_rule_linenum[53] =
     {   0,
        73,   74,   78,   82,   85,   90,   91,  103,  104,  105,
       111,  112,  113,  114,  116,  117,  118,  120,  121,  123,
       124,  125,  127,  129,  131,  133,  134,  136,  137,  143,
       147,  155,  166,  170,  176,  182,  185,  188,  191,  194,
-      198,  203,  206,  217,  224,  225,  226,  231,  235,  240,
-      243
+      198,  203,  206,  217,  224,  225,  226,  227,  232,  236,
+      241,  244
     } ;
 
 /* The intent behind this definition is that it'll catch
@@ -1089,13 +1089,13 @@ do_action:	/* This label is used only to access EOF actions. */
 			{
 			if ( yy_act == 0 )
 				fprintf( stderr, "--scanner backing up\n" );
-			else if ( yy_act < 52 )
+			else if ( yy_act < 53 )
 				fprintf( stderr, "--accepting rule at line %ld (\"%s\")\n",
 				         (long)yy_rule_linenum[yy_act], yytext );
-			else if ( yy_act == 52 )
+			else if ( yy_act == 53 )
 				fprintf( stderr, "--accepting default rule (\"%s\")\n",
 				         yytext );
-			else if ( yy_act == 53 )
+			else if ( yy_act == 54 )
 				fprintf( stderr, "--(end of buffer or a NUL)\n" );
 			else
 				fprintf( stderr, "--EOF (start condition %d)\n", YY_START );
@@ -1435,61 +1435,66 @@ case 45:
 /* rule 45 can match eol */
 YY_RULE_SETUP
 #line 224 "cool.flex"
-{ /* Escaped newline */ }
+{ curr_lineno++; BEGIN(INITIAL); }
 	YY_BREAK
 case 46:
 /* rule 46 can match eol */
 YY_RULE_SETUP
 #line 225 "cool.flex"
-{ BEGIN(INITIAL); }
+{ curr_lineno++; }
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
 #line 226 "cool.flex"
+{ BEGIN(INITIAL); }
+	YY_BREAK
+case 48:
+YY_RULE_SETUP
+#line 227 "cool.flex"
 { /* Any other character */ }
 	YY_BREAK
 /*
   * Counting line number
   */
-case 48:
-/* rule 48 can match eol */
+case 49:
+/* rule 49 can match eol */
 YY_RULE_SETUP
-#line 231 "cool.flex"
+#line 232 "cool.flex"
 { curr_lineno++; }
 	YY_BREAK
 /*
   *  Whitespace characters
   */
-case 49:
-/* rule 49 can match eol */
+case 50:
+/* rule 50 can match eol */
 YY_RULE_SETUP
-#line 235 "cool.flex"
+#line 236 "cool.flex"
 { /* Ignore all whitespaces. Note that adding a '*' at the end would stop us from counting the lines */ }
 	YY_BREAK
 /*
   * Allowed single characters
   */
-case 50:
+case 51:
 YY_RULE_SETUP
-#line 240 "cool.flex"
+#line 241 "cool.flex"
 {	//return the single character
 					return yytext[0];
 					}
 	YY_BREAK
-case 51:
+case 52:
 YY_RULE_SETUP
-#line 243 "cool.flex"
+#line 244 "cool.flex"
 {	//all other characters
 	cool_yylval.error_msg=yytext;
 	return (ERROR);
 	}
 	YY_BREAK
-case 52:
+case 53:
 YY_RULE_SETUP
-#line 248 "cool.flex"
+#line 249 "cool.flex"
 ECHO;
 	YY_BREAK
-#line 1493 "cool-lex.cc"
+#line 1498 "cool-lex.cc"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(IGNORE_STRING):
 	yyterminate();
@@ -2625,7 +2630,7 @@ void yyfree (void * ptr )
 
 /* %ok-for-header */
 
-#line 248 "cool.flex"
+#line 249 "cool.flex"
 
 
 bool add_character_to_string_buffer(char c) {

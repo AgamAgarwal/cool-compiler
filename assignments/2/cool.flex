@@ -221,8 +221,9 @@ f[aA][lL][sS][eE]	{ cool_yylval.boolean=false; return (BOOL_CONST); }
  /*
   * Ignore characters of the string in case of long string or invalid character
   */
-<IGNORE_STRING>\\\n	{ /* Escaped newline */ }
-<IGNORE_STRING>(\n|\")	{ BEGIN(INITIAL); }
+<IGNORE_STRING>\n	{ curr_lineno++; BEGIN(INITIAL); }
+<IGNORE_STRING>\\\n	{ curr_lineno++; }
+<IGNORE_STRING>\"	{ BEGIN(INITIAL); }
 <IGNORE_STRING>.	{ /* Any other character */ }
 
  /*
