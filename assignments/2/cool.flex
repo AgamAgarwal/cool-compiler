@@ -42,9 +42,15 @@ extern YYSTYPE cool_yylval;
 /*
  *  Add Your own definitions here
  */
+
+//function declarations
 bool add_character_to_string_buffer(char);
 int string_too_long();
+
+//the following macro tries to add the given character to the string buffer. If the string becomes too long, it calls a function to handle it appropriately
 #define ADD_CHAR(c) if(!add_character_to_string_buffer( (c) )) return string_too_long()
+
+//integer to maintain the depth of nested comments
 int comment_count=0;
 %}
 
@@ -72,7 +78,7 @@ OBJECTID		{LLETTER}({LETTER}|{DIGIT}|_)*
 
 --.*	{	/*single line comment*/ }
 "*)"	{
-		cool_yylval.error_msg="Unmatched *)";
+		cool_yylval.error_msg="Unmatched *)";	// *) outside any comment block
 		return (ERROR);
 		}
 "(*"	{
@@ -90,8 +96,7 @@ OBJECTID		{LLETTER}({LETTER}|{DIGIT}|_)*
 <COMMENT>\n		{ curr_lineno++; }
 <COMMENT>.	{	/*ignore text inside comments*/ }
 <COMMENT><<EOF>>	{
-					BEGIN(INITIAL);
-					comment_count=0;
+					BEGIN(INITIAL);	//so as to exit gracefully
 					cool_yylval.error_msg="EOF in comment";
 					return (ERROR);
 					}
@@ -141,19 +146,19 @@ f[aA][lL][sS][eE]	{ cool_yylval.boolean=false; return (BOOL_CONST); }
   */
 
 {TYPEID}	{
-			cool_yylval.symbol=idtable.add_string(yytext);
+			cool_yylval.symbol=idtable.add_string(yytext);	//add the string to the ID table
 			return (TYPEID);
 			}
 {OBJECTID}	{
-			cool_yylval.symbol=idtable.add_string(yytext);
+			cool_yylval.symbol=idtable.add_string(yytext);	//add the string to the ID table
 			return (OBJECTID);
 			}
 
  /*
-  * Numbers
+  * Integer constants consist of strings of one or more continuous digits.
   */
 {DIGIT}+	{
-			cool_yylval.symbol=inttable.add_string(yytext);
+			cool_yylval.symbol=inttable.add_string(yytext);	//add the string to the INT table
 			return (INT_CONST);
 			}
 
@@ -169,14 +174,14 @@ f[aA][lL][sS][eE]	{ cool_yylval.boolean=false; return (BOOL_CONST); }
 	}
 <STRING>\"	{	//end of string constant
 			*string_buf_ptr='\0';	//terminate the formed string
-			cool_yylval.symbol=stringtable.add_string(string_buf);
-			BEGIN(INITIAL);
+			cool_yylval.symbol=stringtable.add_string(string_buf);	//add the string to the STRING table
+			BEGIN(INITIAL);	//end of string state
 			return (STR_CONST);
 			}
 <STRING>\n	{	// newline within a string
 			cool_yylval.error_msg="Unterminated string constant";
-			curr_lineno++;
-			BEGIN(INITIAL);
+			curr_lineno++;	//increment line no.
+			BEGIN(INITIAL);	//end of string state, assuming that the programmer forgot to terminate the string
 			return (ERROR);
 			}
 <STRING>\\n	{	//escaped n to mean newline
@@ -192,24 +197,24 @@ f[aA][lL][sS][eE]	{ cool_yylval.boolean=false; return (BOOL_CONST); }
 			ADD_CHAR('\f');
 			}
 <STRING>\\\n	{	//escaped newline
-				curr_lineno++;
+				curr_lineno++;	//increment line number
 				ADD_CHAR('\n');
 				}
 <STRING>\\\0	{
-				BEGIN(IGNORE_STRING);
+				BEGIN(IGNORE_STRING);	//ignore the rest of the string
 				cool_yylval.error_msg="String contains escaped null character.";
 				return (ERROR);
 				}
-<STRING>\\[^\0]	{	//any escaped character except \0
-				ADD_CHAR(yytext[1]);	//ignoring the backslash and add the character after that. Note - The special case of escaped newline has already been handled above
+<STRING>\\(.|\n)	{	//any escaped character
+				ADD_CHAR(yytext[1]);	//ignore the backslash and add the character after that. Note - The special case of escaped newline has already been handled above
 				}
 <STRING>\0	{	//null character
-			BEGIN(IGNORE_STRING);
+			BEGIN(IGNORE_STRING);	//ignore the rest of the string
 			cool_yylval.error_msg="String contains null character.";
 			return (ERROR);
 			}
 <STRING><<EOF>>	{
-				BEGIN(INITIAL);
+				BEGIN(INITIAL);	//so as to exit gracefully
 				cool_yylval.error_msg="EOF in string constant";
 				return (ERROR);
 				}
@@ -222,7 +227,7 @@ f[aA][lL][sS][eE]	{ cool_yylval.boolean=false; return (BOOL_CONST); }
   * Ignore characters of the string in case of long string or invalid character
   */
 <IGNORE_STRING>\n	{ curr_lineno++; BEGIN(INITIAL); }
-<IGNORE_STRING>\\\n	{ curr_lineno++; }
+<IGNORE_STRING>\\\n	{ curr_lineno++; /* escaped newline */ }
 <IGNORE_STRING>\"	{ BEGIN(INITIAL); }
 <IGNORE_STRING>.	{ /* Any other character */ }
 
@@ -247,12 +252,18 @@ f[aA][lL][sS][eE]	{ cool_yylval.boolean=false; return (BOOL_CONST); }
 	}
 	
 %%
+/*
+ * This function adds the given character literal to the string buffer.
+ * Then it checks if the string has exceeded the maximum length. If it has, it returns false. Otherwise it returns true
+ */
 bool add_character_to_string_buffer(char c) {
 	*string_buf_ptr++=c;
-	if((string_buf_ptr-string_buf)>=MAX_STR_CONST)
-		return false;
-	return true;
+	return (string_buf_ptr-string_buf)<MAX_STR_CONST;
 }
+
+/*
+ * This function sets the error flag as "String constant too long" and goes to the IGNORE_STRING state to skip the remaining characters
+ */
 int string_too_long() {
 	cool_yylval.error_msg="String constant too long";
 	BEGIN(IGNORE_STRING);
