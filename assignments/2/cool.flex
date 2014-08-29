@@ -51,7 +51,7 @@ int string_too_long();
 #define ADD_CHAR(c) if(!add_character_to_string_buffer( (c) )) return string_too_long()
 
 //integer to maintain the depth of nested comments
-int comment_count=0;
+int comment_depth=0;
 %}
 
 /*
@@ -83,14 +83,14 @@ OBJECTID		{LLETTER}({LETTER}|{DIGIT}|_)*
 		}
 "(*"	{
 		BEGIN(COMMENT);	//comment begins
-		comment_count++;
+		comment_depth++;
 		}
 <COMMENT>"(*"	{
-				comment_count++;
+				comment_depth++;
 				}
 <COMMENT>"*)"	{
-				comment_count--;
-				if(comment_count==0)
+				comment_depth--;
+				if(!comment_depth)
 					BEGIN(INITIAL);	//comments ends
 				}
 <COMMENT>\n		{ curr_lineno++; }
