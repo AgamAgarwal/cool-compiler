@@ -1,0 +1,4 @@
+1c1
+< LONGERROR
+---
+> STR_CONST "What happens if I escape an EOF? "

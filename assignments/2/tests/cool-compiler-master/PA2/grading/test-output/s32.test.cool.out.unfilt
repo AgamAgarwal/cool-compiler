@@ -1,0 +1,18 @@
+#name "./s32.test.cool"
+#1 '-'
+#1 '-'
+#1 OBJECTID tricky
+#1 ':'
+#1 OBJECTID this
+#1 OBJECTID should
+#1 OBJECTID be
+#1 OBJECTID seen
+#1 OBJECTID as
+#1 OBJECTID an
+#1 OBJECTID error
+#1 ERROR " #l\b\005"
+#1 NOT
+#1 OBJECTID two
+#1 OBJECTID tokens
+#2 '*'
+#2 ')'

@@ -1,0 +1,8 @@
+28c28,32
+< STR_CONST "-\""
+---
+> STR_CONST ""
+> LONGERROR
+> '-'
+> LONGERROR
+> STR_CONST ""

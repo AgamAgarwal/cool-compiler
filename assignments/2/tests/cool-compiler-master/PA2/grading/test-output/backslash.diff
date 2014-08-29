@@ -1,0 +1,4 @@
+1c1
+< STR_CONST "012\\0\\1\\2\t\f\b\nra\bcde\fg"
+---
+> STR_CONST "012\\0\\1\\2\t\f\b\n\015a\bcde\fg"

@@ -1,0 +1,12 @@
+#name "./multilinecomment.cool"
+#3 NOT
+#3 IN
+#3 ERROR "Uncaught error."
+#3 OBJECTID comment
+#10 '('
+#10 '*'
+#10 NOT
+#10 ERROR "Uncaught error."
+#10 OBJECTID comment
+#10 '*'
+#10 ')'

@@ -1,0 +1,6 @@
+#name "./comment_in_string.cl.cool"
+#1 STR_CONST "string (* 123 *) string"
+#2 STR_CONST "string "
+#2 STR_CONST "(* 123 *)"
+#3 STR_CONST "string (* "
+#3 STR_CONST "123 *)"

@@ -1,0 +1,11 @@
+#name "./stringcomment.cool"
+#1 STR_CONST "This is a string--and it's still a string"
+#2 '-'
+#2 '-'
+#2 TYPEID This
+#2 OBJECTID is
+#2 ERROR "P\322\337\b\002"
+#2 OBJECTID comment
+#2 ERROR "\200\322\337\b\007"
+#2 STR_CONST "not a string"
+#4 STR_CONST "(* not a comment *)"

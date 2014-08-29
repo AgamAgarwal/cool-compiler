@@ -1,0 +1,14 @@
+60d59
+< STR_CONST "\n"
+75d73
+< STR_CONST "\n"
+155d152
+< STR_CONST "\n"
+349c346
+< STR_CONST "- dynamic type was Book -\n"
+---
+> STR_CONST "- dynamic type was Book -"
+358c355
+< STR_CONST "- dynamic type was Article -\n"
+---
+> STR_CONST "- dynamic type was Article -"

@@ -1,0 +1,7 @@
+1a2
+> STR_CONST "I'm not going to escape this newline"
+3,4c4
+< LONGERROR
+< LONGERROR
+---
+> STR_CONST "This is also not escaped \\"

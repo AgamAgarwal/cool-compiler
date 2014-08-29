@@ -1,0 +1,8 @@
+2,3c2,5
+< STR_CONST "string \n(* 123 *)"
+< STR_CONST "string (* \n123 *)"
+---
+> STR_CONST "string "
+> STR_CONST "(* 123 *)"
+> STR_CONST "string (* "
+> STR_CONST "123 *)"

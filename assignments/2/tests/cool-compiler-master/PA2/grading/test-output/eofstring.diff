@@ -1,0 +1,4 @@
+1c1
+< LONGERROR
+---
+> STR_CONST " there is an EOF coming... wait for it... wait for it..."
