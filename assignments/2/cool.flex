@@ -195,11 +195,17 @@ f[aA][lL][sS][eE]	{ cool_yylval.boolean=false; return (BOOL_CONST); }
 				ADD_CHAR('\n');
 				curr_lineno++;
 				}
+<STRING>\\\0	{
+				BEGIN(IGNORE_STRING);
+				cool_yylval.error_msg="String contains escaped null character.";
+				return (ERROR);
+				}
 <STRING>\\[^\0]	{	//any escaped character except \0
 				ADD_CHAR(yytext[1]);	//ignoring the backslash and add the character after that. Note - The special case of escaped newline has already been handled above
 				}
 <STRING>\0	{	//null character
-			cool_yylval.error_msg="Null character in string constant";
+			BEGIN(IGNORE_STRING);
+			cool_yylval.error_msg="String contains null character.";
 			return (ERROR);
 			}
 <STRING><<EOF>>	{
@@ -241,9 +247,9 @@ f[aA][lL][sS][eE]	{ cool_yylval.boolean=false; return (BOOL_CONST); }
 	
 %%
 bool add_character_to_string_buffer(char c) {
-	if(string_buf_ptr-string_buf>MAX_STR_CONST)
-		return false;
 	*string_buf_ptr++=c;
+	if((string_buf_ptr-string_buf)>=MAX_STR_CONST)
+		return false;
 	return true;
 }
 int string_too_long() {
