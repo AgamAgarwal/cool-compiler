@@ -1383,8 +1383,8 @@ case 40:
 YY_RULE_SETUP
 #line 194 "cool.flex"
 {	//escaped newline
-				ADD_CHAR('\n');
 				curr_lineno++;
+				ADD_CHAR('\n');
 				}
 	YY_BREAK
 case 41:

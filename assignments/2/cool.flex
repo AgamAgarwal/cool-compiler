@@ -192,8 +192,8 @@ f[aA][lL][sS][eE]	{ cool_yylval.boolean=false; return (BOOL_CONST); }
 			ADD_CHAR('\f');
 			}
 <STRING>\\\n	{	//escaped newline
-				ADD_CHAR('\n');
 				curr_lineno++;
+				ADD_CHAR('\n');
 				}
 <STRING>\\\0	{
 				BEGIN(IGNORE_STRING);
