@@ -95,3 +95,121 @@ Write-up
 --------
 
 
+Keywords
+	All the keywords in COOL are case-insensitive, except for 'true' and 
+	'false', which are partially case-insensitive. These were 
+	implemented as "[wW][hH][iI][lL][eE]" for the keyword 'while'. This 
+	gave a flexibility to the programmer to use either of uppercase 
+	and lowercase letters in the code. In COOL, the boolean constants 
+	'true' and 'false' must begin with a lowercase letter. Thus 'trUe' 
+	and 'fAlSe' are acceptable, while 'TRUE' and 'False' are not. Their 
+	regular expression was written as "t[rR][uU][eE]" and 
+	"f[aA][lL][sS][eE]" to force that the first letter has to be 
+	lowercase.
+
+Identifiers
+	Identifiers in cool are strings containing letters, digits and 
+	underscore symbol, and beginning with a letter. Object identifiers 
+	begin with a lowercase letter while type identifiers begin with an 
+	uppercase letter.
+	An important issue to be taken care of was that all the keywords in 
+	COOL also satisfy the pattern for identifiers. This issue was solved
+	by placing the patterns for keywords before the patterns for 
+	identifiers.
+
+Integers
+	Integers in COOL are simply strings of one or more digits. After the
+	pattern "{DIGIT}+" was matched, the matched string was added to the 
+	table of integers. Note that, the table had a function of adding 
+	integers, but I used the function of adding strings. This was 
+	because internally, the add_int() function converted the given 
+	integer to string and then called the add_string() function. Thus, 
+	directly using add_string() avoided the overhead.
+
+Line Numbers
+	The integer variable 'curr_lineno' is used to keep count of line 
+	numbers. Whenever a newline character ('\n') is encountered, the 
+	variable is incremented.
+
+Single Line Comments
+	Single line comments in COOL begin with "--", so for catching such 
+	comments, a simple regex of "--.*" was enough. Another way of 
+	handling them would have been going into a special state when "--" 
+	is encountered. Then, in this we would all characters except a 
+	newline, in which we would exit the special state. But as the regex 
+	special character '.' matches all characters except '\n', the regex 
+	used was sufficient. Note that '.' will also match also allow 
+	unprintable characters, even null characters, which is allowed in 
+	COOL comments.
+
+Multiline Comments
+	Multiline comments in COOL are enclosed within "(*" and "*)". An 
+	approach similar to that for single line comments could not be 
+	applied for multiline comments as COOL allows nested multiline 
+	comments. Thus I needed to implement it using a separate state for 
+	comments. When a "(*" is encountered, the lexer goes into an 
+	exclusive state 'COMMENT'. A counter keeps track of the depth of 
+	nested comments. The counter is incremented when "(*" is encountered
+	and decremented when "*)" is encountered. When the counter becomes 
+	zero the lexer goes back to the 'INITIAL' state.
+	When a '\n' is encountered in the comment, the line number counter 
+	'curr_lineno' is incremented. All other characters are ignored. 
+	However, when an EOF is encountered within the comment, an error 
+	flag is returned with appropriate message.
+
+Strings
+	Strings in COOL are enclosed within a pair of double quotes. String 
+	patterns were also implemented using states. This is because several
+	characters had different interpretations when inside a string than 
+	when not inside a string. The lexer enters an exclusive state 
+	'STRING' when it encounters a '"'. It goes back to the 'INITIAL' 
+	state when it encounters an unescaped '"'. A string	buffer is 
+	maintained where all the character in the string are added.
+	If the lexer encounters an escaped n, b, t, or f, it adds the 
+	associated special character to the string buffer. For all other 
+	escaped characters, the character itself is added to the buffer.
+	Newlines within the string had to be handled carefully. When 
+	unescaped, the string is considered to be unterminated, the lexer 
+	goes to the 'INITIAL' state and an error flag is raised. When the 
+	newline is escaped, a newline character is added to the string 
+	buffer. However, in both cases the line number counter has to be 
+	incremented.
+	Another character to which attention has to be paid is the null 
+	character. Whether escaped or not, a null character is not allowed 
+	in a COOL string constant. When it is encountered, an error flag is 
+	raised and the lexer moves to another exclusive state 
+	'IGNORE_STRING'. In this state all character except newlines and 
+	quotes are ignored. When escaped, they are ignored, but if they are 
+	unescaped, the string is considered to have ended and the lexer 
+	returns to the 'INITIAL' state. In both the kinds of occurences of 
+	the newline character, the line number counter is incremented.
+	When EOF is encountered when in the 'STRING' state, an error flag is
+	raised.
+	All other characters are added to string buffer when encountered.
+	Another important aspect of COOL strings is that a string constant 
+	can be of a maximum length of 1024 characters. Thus, whenever a new 
+	character is added to the string buffer, the current is compared 
+	against the maximum allowed length. If the string is too long, an 
+	error flag is raised and the lexer enters the 'IGNORE_STRING' state.
+	For implementing this, I defined a macro 'ADD_CHAR', which takes a 
+	character as input, and calls a function
+	add_character_to_string_buffer(), which adds the character and then 
+	returns if the string is long or not. If the function returns 
+	'false' an error flag is raised. This macro is used whenever a 
+	character has to added to the string buffer.
+
+Whitespace
+	COOL allows, space(' '), newline('\n'), formfeed('\f'), carriage
+	return('\r'), horizontal tab('\t') and vertical tab('\v') as 
+	whitespace characters. These are ignore by the lexer.
+
+Character constants
+	COOL allows three multicharacter constants, "=>", "<-" and "<=". 
+	When these are encountered, the associated constants are returned. 
+	When the allowed single character constants are encountered, the 
+	character itself is returned.
+
+Other characters
+	All other characters are not allowed in COOL programs (except when 
+	inside comments or strings) and when they encountered an error flag 
+	is raised with the character itself as the error message.
