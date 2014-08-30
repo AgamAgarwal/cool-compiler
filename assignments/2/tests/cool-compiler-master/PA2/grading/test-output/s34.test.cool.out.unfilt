@@ -1,4 +1,0 @@
-#name "./s34.test.cool"
-#1 OBJECTID before_it
-#3 ERROR "Unterminated string constant"
-#3 ERROR "EOF in string constant"

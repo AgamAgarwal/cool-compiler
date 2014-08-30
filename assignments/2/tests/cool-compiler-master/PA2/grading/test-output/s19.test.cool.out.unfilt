@@ -1,3 +1,0 @@
-#name "./s19.test.cool"
-#2 ERROR "Unterminated string constant"
-#2 STR_CONST "cd"

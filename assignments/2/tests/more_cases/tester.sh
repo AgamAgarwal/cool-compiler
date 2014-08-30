@@ -1,5 +1,6 @@
 #/bin/bash
 LEXER=/home/compilers/course/assignments/2/lexer
+mkdir -p results
 for file in $(ls *.cool)
 do
 	$LEXER $file > results/$file.out
