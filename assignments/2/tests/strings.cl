@@ -14,4 +14,6 @@
 
 " comment (* inside *) strings are not handled separately"
 
+"a \0 is allowed in a string and is interpreted as 0"
+
 "This is string has EOF
