@@ -1135,7 +1135,7 @@ YY_RULE_SETUP
 #line 84 "cool.flex"
 {
 		BEGIN(COMMENT);	//comment begins
-		comment_depth++;
+		comment_depth=1;	//Note: a simple comment_depth++ actually causes problems when there are multiple files, as the counter is not reset by default
 		}
 	YY_BREAK
 case 4:
