@@ -173,6 +173,12 @@ f[aA][lL][sS][eE]	{ cool_yylval.boolean=false; return (BOOL_CONST); }
 	string_buf_ptr=string_buf;	//set the buffer pointer to the beginning of the buffer
 	}
 <STRING>\"	{	//end of string constant
+			if(string_buf_ptr-string_buf>=MAX_STR_CONST)
+				{
+				cool_yylval.error_msg="String constant too long";
+				BEGIN(INITIAL);
+				return (ERROR);
+				}
 			*string_buf_ptr='\0';	//terminate the formed string
 			cool_yylval.symbol=stringtable.add_string(string_buf);	//add the string to the STRING table
 			BEGIN(INITIAL);	//end of string state
@@ -259,8 +265,10 @@ f[aA][lL][sS][eE]	{ cool_yylval.boolean=false; return (BOOL_CONST); }
  * Then it checks if the string has exceeded the maximum length. If it has, it returns false. Otherwise it returns true
  */
 bool add_character_to_string_buffer(char c) {
+	if(string_buf_ptr-string_buf>=MAX_STR_CONST)
+		return false;
 	*string_buf_ptr++=c;
-	return (string_buf_ptr-string_buf)<MAX_STR_CONST;
+	return true;
 }
 
 /*
