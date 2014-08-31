@@ -229,6 +229,7 @@ f[aA][lL][sS][eE]	{ cool_yylval.boolean=false; return (BOOL_CONST); }
 <IGNORE_STRING>\n	{ curr_lineno++; BEGIN(INITIAL); }
 <IGNORE_STRING>\\\n	{ curr_lineno++; /* escaped newline */ }
 <IGNORE_STRING>\\\"	{ /* Ignore escaped quote */ }
+<IGNORE_STRING>\\\\	{ /* Ignore escaped backslash */ }
 <IGNORE_STRING>\"	{ BEGIN(INITIAL); }
 <IGNORE_STRING>.	{ /* Any other character */ }
 
