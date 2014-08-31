@@ -213,3 +213,15 @@ Other characters
 	All other characters are not allowed in COOL programs (except when 
 	inside comments or strings) and when they encountered an error flag 
 	is raised with the character itself as the error message.
+
+Test cases
+	I have included several test cases in the directory "tests". I have 
+	tried to include all the types of different error cases that can 
+	occur in a COOL program. Some test cases also contain some errors 
+	which must be flagged, but not by the lexer. Such cases are to 
+	ensure that only the correct type of errors are handled in the 
+	lexical analysis step.
+	Moreover, I have tried to include most possible combinations of 
+	errors possible to check which of the errors should be flagged and 
+	in what order.
+	Thus I believe my test cases are sufficient.
