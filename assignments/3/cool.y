@@ -177,7 +177,11 @@
     
     /* Definition of a feature */
     feature: OBJECTID '(' formal_list ')' ':' TYPEID '{' expr '}'
-    {	$$=method($1, $3, $6, $8); printf("method\n");}
+    {	$$=method($1, $3, $6, $8); }
+    | OBJECTID ':' TYPEID
+    {	$$=attr($1, $3, no_expr()); }
+    | OBJECTID ':' TYPEID ASSIGN expr
+    {	$$=attr($1, $3, $5); }
     
     
     /* Definition of list of formals(method parameters) */
@@ -192,7 +196,9 @@
     formal: OBJECTID ':' TYPEID
     {	$$=formal($1, $3); }
     
-    expr: INT_CONST
+    expr: OBJECTID ASSIGN expr
+    {	$$=assign($1, $3); }
+    | INT_CONST
     {	$$=int_const($1); }
     
     /* end of grammar */
