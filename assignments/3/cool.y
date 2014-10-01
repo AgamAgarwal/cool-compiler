@@ -137,6 +137,10 @@
     /* You will want to change the following line. */
     %type <features> feature_list
     %type <feature> feature
+    %type <formals> formal_list
+    %type <formal> formal
+    //%type <expressions> expr_list
+    %type <expression> expr
     
     /* Precedence declarations go here. */
     
@@ -168,14 +172,28 @@
     /* Feature list may be empty, but no empty features in list. */
     feature_list:		/* empty */
     {  $$ = nil_Features(); }
-    | feature ';'
-    {	$$=single_Features($1); }
     | feature_list feature ';'
     {	$$=append_Features($1, single_Features($2)); }
     
     /* Definition of a feature */
-    feature:	/* empty */
-    {	$$=NULL;	}
+    feature: OBJECTID '(' formal_list ')' ':' TYPEID '{' expr '}'
+    {	$$=method($1, $3, $6, $8); printf("method\n");}
+    
+    
+    /* Definition of list of formals(method parameters) */
+    formal_list:	/* empty */
+    {	$$=nil_Formals(); }
+    | formal
+    {	$$=single_Formals($1); }
+    | formal_list ',' formal
+    {	$$=append_Formals($1, single_Formals($3)); }
+    
+    /* Definition of a formal */
+    formal: OBJECTID ':' TYPEID
+    {	$$=formal($1, $3); }
+    
+    expr: INT_CONST
+    {	$$=int_const($1); }
     
     /* end of grammar */
     %%
