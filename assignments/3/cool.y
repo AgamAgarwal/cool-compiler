@@ -139,11 +139,10 @@
     %type <feature> feature
     %type <formals> formal_list
     %type <formal> formal
-    //%type <expressions> expr_list
+    %type <expressions> expr_actuals
     %type <expression> expr
     
     /* Precedence declarations go here. */
-    
     
     %%
     /* 
@@ -179,7 +178,7 @@
     feature: OBJECTID '(' formal_list ')' ':' TYPEID '{' expr '}'
     {	$$=method($1, $3, $6, $8); }
     | OBJECTID ':' TYPEID
-    {	$$=attr($1, $3, no_expr()); }
+    {	$$=attr($1, $3, no_expr());	}
     | OBJECTID ':' TYPEID ASSIGN expr
     {	$$=attr($1, $3, $5); }
     
@@ -196,8 +195,29 @@
     formal: OBJECTID ':' TYPEID
     {	$$=formal($1, $3); }
     
-    expr: OBJECTID ASSIGN expr
+    
+    /* Definition of expr_actuals (parameters to methods) */
+    expr_actuals:	/* empty */
+    {	$$=nil_Expressions(); }
+    | expr
+    {	$$=single_Expressions($1); }
+    | expr_actuals ',' expr
+    {	$$=append_Expressions($1, single_Expressions($3)); }
+    
+    expr:
+    /* assignment */
+    OBJECTID ASSIGN expr
     {	$$=assign($1, $3); }
+    
+    /* dispatches */
+    | expr '@' TYPEID '.' OBJECTID '(' expr_actuals ')'
+    {	$$=static_dispatch($1, $3, $5, $7); }
+    | expr '.' OBJECTID '(' expr_actuals ')'
+    {	$$=dispatch($1, $3, $5); }
+    | OBJECTID '(' expr_actuals ')'
+    {	$$=dispatch(object(idtable.add_string("self")), $1, $3); }
+    
+    
     | INT_CONST
     {	$$=int_const($1); }
     
