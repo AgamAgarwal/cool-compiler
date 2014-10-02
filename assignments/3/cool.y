@@ -141,6 +141,8 @@
     %type <formal> formal
     %type <expressions> expr_actuals expr_list
     %type <expression> expr optional_init let_list
+    %type <case_> case
+    %type <cases> case_list
     
     /* Precedence declarations go here. */
     %nonassoc LET_STMT
@@ -229,6 +231,18 @@
     | OBJECTID ':' TYPEID optional_init ',' let_list
     {	$$=let($1, $3, $4, $6); }
     
+    /* Definition of a single case */
+    case: OBJECTID ':' TYPEID DARROW expr ';'
+    {	$$=branch($1, $3, $5); }
+    
+    /* Definition of a list of one or more cases */
+    case_list:
+    /* single case */
+    case
+    {	$$=single_Cases($1); }
+    | case_list case
+    {	$$=append_Cases($1, single_Cases($2)); }
+    
     expr:
     /* assignment */
     OBJECTID ASSIGN expr
@@ -257,6 +271,10 @@
     /* let statement */
     | LET let_list
     {	$$=$2; }
+    
+    /* case statement */
+    | CASE expr OF case_list ESAC
+    {	$$=typcase($2, $4); }
     
     | INT_CONST
     {	$$=int_const($1); }
