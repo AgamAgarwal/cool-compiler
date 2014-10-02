@@ -147,8 +147,8 @@
     /* Precedence declarations go here. */
     %nonassoc LET_STMT
     %nonassoc SHIFT_THERE
-    %left '@' '.'
     %right NOT
+    %left '@' '.'
     %nonassoc '<' LE '='
     %left '+' '-'
     %left '*' '/'
