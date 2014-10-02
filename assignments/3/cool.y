@@ -315,8 +315,25 @@
     | NOT expr
     {	$$=comp($2); }
     
+    /* Paranthesised expression */
+    | '(' expr ')'
+    {	$$=$2; }
+    
+    /* Identifier */
+    | OBJECTID
+    {	$$=object($1); }
+    
+    /* Integer constant */
     | INT_CONST
     {	$$=int_const($1); }
+    
+    /* String constant */
+    | STR_CONST
+    {	$$=string_const($1); }
+    
+    /* Boolean constants */
+    | BOOL_CONST
+    {	$$=bool_const($1); }
     
     /* end of grammar */
     %%
