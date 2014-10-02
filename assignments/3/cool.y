@@ -148,6 +148,8 @@
     %nonassoc LET_STMT
     %nonassoc SHIFT_THERE
     %left '@' '.'
+    %right NOT
+    %nonassoc '<' LE '='
     %left '+' '-'
     %left '*' '/'
     %nonassoc '~'
@@ -302,6 +304,16 @@
     /* unary minus */
     | '~' expr
     {	$$=neg($2); }
+    
+    /* Relational operators */
+    | expr '<' expr
+    {	$$=lt($1, $3); }
+    | expr LE expr
+    {	$$=leq($1, $3); }
+    | expr '=' expr
+    {	$$=eq($1, $3); }
+    | NOT expr
+    {	$$=comp($2); }
     
     | INT_CONST
     {	$$=int_const($1); }
