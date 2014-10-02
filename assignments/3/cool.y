@@ -217,6 +217,13 @@
     | OBJECTID '(' expr_actuals ')'
     {	$$=dispatch(object(idtable.add_string("self")), $1, $3); }
     
+    /* if condition */
+    | IF expr THEN expr ELSE expr FI
+    {	$$=cond($2, $4, $6); }
+    
+    /* while loop */
+    | WHILE expr LOOP expr POOL
+    {	$$=loop($2, $4); }
     
     | INT_CONST
     {	$$=int_const($1); }
