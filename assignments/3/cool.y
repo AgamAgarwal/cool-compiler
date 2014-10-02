@@ -140,9 +140,10 @@
     %type <formals> formal_list
     %type <formal> formal
     %type <expressions> expr_actuals expr_list
-    %type <expression> expr
+    %type <expression> expr optional_init let_list
     
     /* Precedence declarations go here. */
+    %nonassoc LET_STMT
     
     %%
     /* 
@@ -196,6 +197,12 @@
     {	$$=formal($1, $3); }
     
     
+    /* Optional initialization */
+    optional_init:	/* empty */
+    {	$$=no_expr(); }
+    | ASSIGN expr
+    {	$$=$2; }
+    
     /* Definition of expr_actuals (parameters to methods) */
     expr_actuals:	/* empty */
     {	$$=nil_Expressions(); }
@@ -212,6 +219,15 @@
     /* multiple expressions */
     | expr_list expr ';'
     {	$$=append_Expressions($1, single_Expressions($2)); }
+    
+    /* List of expressions for let statement. Note that they are nested */
+    let_list:
+    /* single */
+    OBJECTID ':' TYPEID optional_init IN expr %prec LET_STMT
+    {	$$=let($1, $3, $4, $6); }
+    /* multiple */
+    | OBJECTID ':' TYPEID optional_init ',' let_list
+    {	$$=let($1, $3, $4, $6); }
     
     expr:
     /* assignment */
@@ -237,6 +253,10 @@
     /* list of expressions */
     | '{' expr_list '}'
     {	$$=block($2); }
+    
+    /* let statement */
+    | LET let_list
+    {	$$=$2; }
     
     | INT_CONST
     {	$$=int_const($1); }
