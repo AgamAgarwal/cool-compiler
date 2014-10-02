@@ -146,7 +146,11 @@
     
     /* Precedence declarations go here. */
     %nonassoc LET_STMT
-    %right SHIFT_THERE '@' '.'
+    %nonassoc SHIFT_THERE
+    %left '@' '.'
+    %left '+' '-'
+    %left '*' '/'
+    
     %%
     /* 
     Save the root of the abstract syntax tree in a global variable.
@@ -283,6 +287,17 @@
     /* IsVoid */
     | ISVOID expr %prec SHIFT_THERE
     {	$$=isvoid($2); }
+    
+    /* Binary arithmetic expressions */
+    | expr '+' expr
+    {	$$=plus($1, $3); }
+    | expr '-' expr
+    {	$$=sub($1, $3); }
+    | expr '*' expr
+    {	$$=mul($1, $3); }
+    | expr '/' expr
+    {	$$=divide($1, $3); }
+    
     
     | INT_CONST
     {	$$=int_const($1); }
