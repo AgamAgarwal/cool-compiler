@@ -146,7 +146,7 @@
     
     /* Precedence declarations go here. */
     %nonassoc LET_STMT
-    
+    %right SHIFT_THERE '@' '.'
     %%
     /* 
     Save the root of the abstract syntax tree in a global variable.
@@ -245,7 +245,7 @@
     
     expr:
     /* assignment */
-    OBJECTID ASSIGN expr
+    OBJECTID ASSIGN expr %prec SHIFT_THERE
     {	$$=assign($1, $3); }
     
     /* dispatches */
@@ -281,7 +281,7 @@
     {	$$=new_($2); }
     
     /* IsVoid */
-    | ISVOID expr
+    | ISVOID expr %prec SHIFT_THERE
     {	$$=isvoid($2); }
     
     | INT_CONST
