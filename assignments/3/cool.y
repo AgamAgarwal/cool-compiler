@@ -276,6 +276,14 @@
     | CASE expr OF case_list ESAC
     {	$$=typcase($2, $4); }
     
+    /* instantiation of new object*/
+    | NEW TYPEID
+    {	$$=new_($2); }
+    
+    /* IsVoid */
+    | ISVOID expr
+    {	$$=isvoid($2); }
+    
     | INT_CONST
     {	$$=int_const($1); }
     
