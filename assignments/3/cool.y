@@ -139,7 +139,7 @@
     %type <feature> feature
     %type <formals> formal_list
     %type <formal> formal
-    %type <expressions> expr_actuals
+    %type <expressions> expr_actuals expr_list
     %type <expression> expr
     
     /* Precedence declarations go here. */
@@ -204,6 +204,15 @@
     | expr_actuals ',' expr
     {	$$=append_Expressions($1, single_Expressions($3)); }
     
+    /* Definition semicolon terminated expr_list */
+    expr_list:
+    /* single expression */
+    expr ';'
+    {	$$=single_Expressions($1); }
+    /* multiple expressions */
+    | expr_list expr ';'
+    {	$$=append_Expressions($1, single_Expressions($2)); }
+    
     expr:
     /* assignment */
     OBJECTID ASSIGN expr
@@ -224,6 +233,10 @@
     /* while loop */
     | WHILE expr LOOP expr POOL
     {	$$=loop($2, $4); }
+    
+    /* list of expressions */
+    | '{' expr_list '}'
+    {	$$=block($2); }
     
     | INT_CONST
     {	$$=int_const($1); }
