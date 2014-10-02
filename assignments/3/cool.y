@@ -150,6 +150,7 @@
     %left '@' '.'
     %left '+' '-'
     %left '*' '/'
+    %nonassoc '~'
     
     %%
     /* 
@@ -298,6 +299,9 @@
     | expr '/' expr
     {	$$=divide($1, $3); }
     
+    /* unary minus */
+    | '~' expr
+    {	$$=neg($2); }
     
     | INT_CONST
     {	$$=int_const($1); }
