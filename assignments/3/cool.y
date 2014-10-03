@@ -152,6 +152,7 @@
     %left '@' '.'
     %left '+' '-'
     %left '*' '/'
+    %nonassoc ISVOID
     %nonassoc '~'
     
     %%
@@ -288,7 +289,7 @@
     {	$$=new_($2); }
     
     /* IsVoid */
-    | ISVOID expr %prec SHIFT_THERE
+    | ISVOID expr
     {	$$=isvoid($2); }
     
     /* Binary arithmetic expressions */
