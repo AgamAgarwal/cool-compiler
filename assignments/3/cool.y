@@ -148,8 +148,8 @@
     %nonassoc LET_STMT
     %nonassoc SHIFT_THERE
     %right NOT
-    %left '@' '.'
     %nonassoc '<' LE '='
+    %left '@' '.'
     %left '+' '-'
     %left '*' '/'
     %nonassoc '~'
