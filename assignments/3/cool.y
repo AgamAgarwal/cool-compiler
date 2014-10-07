@@ -169,6 +169,8 @@
     | class_list class	/* several classes */
     { $$ = append_Classes($1,single_Classes($2)); 
     parse_results = $$; }
+    | error class
+    {}
     ;
     
     /* If no parent is specified, the class inherits from the Object class. */
@@ -192,6 +194,8 @@
     {	$$=attr($1, $3, no_expr());	}
     | OBJECTID ':' TYPEID ASSIGN expr
     {	$$=attr($1, $3, $5); }
+    | error
+    {}
     
     
     /* Definition of list of formals(method parameters) */
@@ -244,6 +248,8 @@
     /* multiple */
     | OBJECTID ':' TYPEID optional_init ',' let_list
     {	$$=let($1, $3, $4, $6); }
+    | error let_list
+    {}
     
     /* Definition of a single case */
     case: OBJECTID ':' TYPEID DARROW expr ';'
@@ -256,6 +262,8 @@
     {	$$=single_Cases($1); }
     | case_list case
     {	$$=append_Cases($1, single_Cases($2)); }
+    | error
+    {}
     
     expr:
     /* assignment */
