@@ -137,7 +137,7 @@
     /* You will want to change the following line. */
     %type <features> feature_list
     %type <feature> feature
-    %type <formals> formal_list
+    %type <formals> formal_list formal_list2
     %type <formal> formal
     %type <expressions> expr_actuals expr_actuals_list expr_list
     %type <expression> expr optional_init let_list
@@ -145,15 +145,16 @@
     %type <cases> case_list
     
     /* Precedence declarations go here. */
-    %nonassoc LET_STMT
-    %nonassoc SHIFT_THERE
+    %left IN
+    %right ASSIGN
     %right NOT
     %nonassoc '<' LE '='
-    %left '@' '.'
     %left '+' '-'
     %left '*' '/'
     %nonassoc ISVOID
     %nonassoc '~'
+    %left '@'
+    %left '.'
     
     %%
     /* 
@@ -169,8 +170,12 @@
     | class_list class	/* several classes */
     { $$ = append_Classes($1,single_Classes($2)); 
     parse_results = $$; }
-    | error class
-    {}
+    | class_list error ';'
+    { $$=$1;
+    parse_results = $$; }
+    | error ';'
+    { $$=nil_Classes();
+    parse_results = $$; }
     ;
     
     /* If no parent is specified, the class inherits from the Object class. */
@@ -186,6 +191,8 @@
     {  $$ = nil_Features(); }
     | feature_list feature ';'
     {	$$=append_Features($1, single_Features($2)); }
+    | feature_list error ';'
+    {	$$=$1; }
     
     /* Definition of a feature */
     feature: OBJECTID '(' formal_list ')' ':' TYPEID '{' expr '}'
@@ -194,17 +201,20 @@
     {	$$=attr($1, $3, no_expr());	}
     | OBJECTID ':' TYPEID ASSIGN expr
     {	$$=attr($1, $3, $5); }
-    | error
-    {}
-    
     
     /* Definition of list of formals(method parameters) */
     formal_list:	/* empty */
     {	$$=nil_Formals(); }
     | formal
     {	$$=single_Formals($1); }
-    | formal_list ',' formal
-    {	$$=append_Formals($1, single_Formals($3)); }
+    | formal_list2 formal
+    {	$$=append_Formals($1, single_Formals($2)); }
+    
+    /* Definition of formal_list2 (more than one formals) */
+    formal_list2: formal ','
+    {	$$=single_Formals($1); }
+    | formal_list2 formal ','
+    {	$$=append_Formals($1, single_Formals($2)); }
     
     /* Definition of a formal */
     formal: OBJECTID ':' TYPEID
@@ -239,11 +249,13 @@
     /* multiple expressions */
     | expr_list expr ';'
     {	$$=append_Expressions($1, single_Expressions($2)); }
+    | expr_list error ';'
+    { $$=$1;}
     
     /* List of expressions for let statement. Note that they are nested */
     let_list:
     /* single */
-    OBJECTID ':' TYPEID optional_init IN expr %prec LET_STMT
+    OBJECTID ':' TYPEID optional_init IN expr
     {	$$=let($1, $3, $4, $6); }
     /* multiple */
     | OBJECTID ':' TYPEID optional_init ',' let_list
@@ -267,7 +279,7 @@
     
     expr:
     /* assignment */
-    OBJECTID ASSIGN expr %prec SHIFT_THERE
+    OBJECTID ASSIGN expr
     {	$$=assign($1, $3); }
     
     /* dispatches */
@@ -349,10 +361,6 @@
     /* Boolean constants */
     | BOOL_CONST
     {	$$=bool_const($1); }
-    
-    /* error */
-    | error
-    {}
     
     /* end of grammar */
     %%
