@@ -336,6 +336,10 @@
     | BOOL_CONST
     {	$$=bool_const($1); }
     
+    /* error */
+    | error
+    {}
+    
     /* end of grammar */
     %%
     
