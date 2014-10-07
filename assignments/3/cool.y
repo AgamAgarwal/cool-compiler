@@ -152,7 +152,7 @@
     %left '+' '-'
     %left '*' '/'
     %nonassoc ISVOID
-    %nonassoc '~'
+    %right '~'
     %left '@'
     %left '.'
     
@@ -193,14 +193,13 @@
     {	$$=append_Features($1, single_Features($2)); }
     | feature_list error ';'
     {	$$=$1; }
+    ;
     
     /* Definition of a feature */
     feature: OBJECTID '(' formal_list ')' ':' TYPEID '{' expr '}'
     {	$$=method($1, $3, $6, $8); }
-    | OBJECTID ':' TYPEID
-    {	$$=attr($1, $3, no_expr());	}
-    | OBJECTID ':' TYPEID ASSIGN expr
-    {	$$=attr($1, $3, $5); }
+    | OBJECTID ':' TYPEID optional_init
+    {	$$=attr($1, $3, $4);	}
     
     /* Definition of list of formals(method parameters) */
     formal_list:	/* empty */
@@ -209,23 +208,26 @@
     {	$$=single_Formals($1); }
     | formal_list2 formal
     {	$$=append_Formals($1, single_Formals($2)); }
+    ;
     
     /* Definition of formal_list2 (more than one formals) */
     formal_list2: formal ','
     {	$$=single_Formals($1); }
     | formal_list2 formal ','
     {	$$=append_Formals($1, single_Formals($2)); }
+    ;
     
     /* Definition of a formal */
     formal: OBJECTID ':' TYPEID
     {	$$=formal($1, $3); }
-    
+    ;
     
     /* Optional initialization */
     optional_init:	/* empty */
     {	$$=no_expr(); }
     | ASSIGN expr
     {	$$=$2; }
+    ;
     
     /* Definition of expr_actuals (parameters to methods) */
     expr_actuals:	/* empty */
@@ -234,12 +236,14 @@
     {	$$=single_Expressions($1); }
     | expr_actuals_list expr
     {	$$=append_Expressions($1, single_Expressions($2)); }
+    ;
     
     /* Definition of expr_actuals_list (for more than one parameter) */
     expr_actuals_list: expr ','
     {	$$=single_Expressions($1); }
     | expr_actuals_list expr ','
     {	$$=append_Expressions($1, single_Expressions($2)); }
+    ;
     
     /* Definition semicolon terminated expr_list */
     expr_list:
@@ -250,7 +254,8 @@
     | expr_list expr ';'
     {	$$=append_Expressions($1, single_Expressions($2)); }
     | expr_list error ';'
-    { $$=$1;}
+    {	$$=$1; }
+    ;
     
     /* List of expressions for let statement. Note that they are nested */
     let_list:
@@ -262,10 +267,12 @@
     {	$$=let($1, $3, $4, $6); }
     | error let_list
     {}
+    ;
     
     /* Definition of a single case */
     case: OBJECTID ':' TYPEID DARROW expr ';'
     {	$$=branch($1, $3, $5); }
+    ;
     
     /* Definition of a list of one or more cases */
     case_list:
@@ -274,8 +281,7 @@
     {	$$=single_Cases($1); }
     | case_list case
     {	$$=append_Cases($1, single_Cases($2)); }
-    | error
-    {}
+    ;
     
     expr:
     /* assignment */
@@ -361,6 +367,7 @@
     /* Boolean constants */
     | BOOL_CONST
     {	$$=bool_const($1); }
+    ;
     
     /* end of grammar */
     %%
