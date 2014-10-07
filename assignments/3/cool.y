@@ -139,7 +139,7 @@
     %type <feature> feature
     %type <formals> formal_list
     %type <formal> formal
-    %type <expressions> expr_actuals expr_list
+    %type <expressions> expr_actuals expr_actuals_list expr_list
     %type <expression> expr optional_init let_list
     %type <case_> case
     %type <cases> case_list
@@ -218,8 +218,14 @@
     {	$$=nil_Expressions(); }
     | expr
     {	$$=single_Expressions($1); }
-    | expr_actuals ',' expr
-    {	$$=append_Expressions($1, single_Expressions($3)); }
+    | expr_actuals_list expr
+    {	$$=append_Expressions($1, single_Expressions($2)); }
+    
+    /* Definition of expr_actuals_list (for more than one parameter) */
+    expr_actuals_list: expr ','
+    {	$$=single_Expressions($1); }
+    | expr_actuals_list expr ','
+    {	$$=append_Expressions($1, single_Expressions($2)); }
     
     /* Definition semicolon terminated expr_list */
     expr_list:
