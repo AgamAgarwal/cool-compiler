@@ -140,7 +140,7 @@
     %type <formals> formal_list formal_list2
     %type <formal> formal
     %type <expressions> expr_actuals expr_actuals_list expr_list
-    %type <expression> expr optional_init let_list
+    %type <expression> expr let_list
     %type <case_> case
     %type <cases> case_list
     
@@ -198,8 +198,11 @@
     /* Definition of a feature */
     feature: OBJECTID '(' formal_list ')' ':' TYPEID '{' expr '}'
     {	$$=method($1, $3, $6, $8); }
-    | OBJECTID ':' TYPEID optional_init
-    {	$$=attr($1, $3, $4);	}
+    | OBJECTID ':' TYPEID
+    {	$$=attr($1, $3, no_expr());	}
+    | OBJECTID ':' TYPEID ASSIGN expr
+    {	$$=attr($1, $3, $5); }
+    
     
     /* Definition of list of formals(method parameters) */
     formal_list:	/* empty */
@@ -220,13 +223,6 @@
     /* Definition of a formal */
     formal: OBJECTID ':' TYPEID
     {	$$=formal($1, $3); }
-    ;
-    
-    /* Optional initialization */
-    optional_init:	/* empty */
-    {	$$=no_expr(); }
-    | ASSIGN expr
-    {	$$=$2; }
     ;
     
     /* Definition of expr_actuals (parameters to methods) */
@@ -260,11 +256,15 @@
     /* List of expressions for let statement. Note that they are nested */
     let_list:
     /* single */
-    OBJECTID ':' TYPEID optional_init IN expr
-    {	$$=let($1, $3, $4, $6); }
+    OBJECTID ':' TYPEID IN expr
+    {	$$=let($1, $3, no_expr(), $5); }
+    | OBJECTID ':' TYPEID ASSIGN expr IN expr
+    {	$$=let($1, $3, $5, $7); }
     /* multiple */
-    | OBJECTID ':' TYPEID optional_init ',' let_list
-    {	$$=let($1, $3, $4, $6); }
+    | OBJECTID ':' TYPEID ',' let_list
+    {	$$=let($1, $3, no_expr(), $5); }
+    | OBJECTID ':' TYPEID ASSIGN expr ',' let_list
+    {	$$=let($1, $3, $5, $7); }
     | error let_list
     {}
     ;
