@@ -145,14 +145,14 @@
     %type <cases> case_list
     
     /* Precedence declarations go here. */
-    %left IN
+    %nonassoc IN
     %right ASSIGN
-    %right NOT
+    %nonassoc NOT
     %nonassoc '<' LE '='
     %left '+' '-'
     %left '*' '/'
     %nonassoc ISVOID
-    %right '~'
+    %nonassoc '~'
     %left '@'
     %left '.'
     
@@ -251,6 +251,8 @@
     {	$$=append_Expressions($1, single_Expressions($2)); }
     | expr_list error ';'
     {	$$=$1; }
+    | error ';'
+    {	$$=nil_Expressions(); }
     ;
     
     /* List of expressions for let statement. Note that they are nested */
