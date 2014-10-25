@@ -56,8 +56,8 @@ public:
    tree_node *copy()		 { return copy_Feature(); }
    virtual Feature copy_Feature() = 0;
 
-	//function to check type of feature
-	virtual bool is_method() = 0;
+	//function to check the feature
+	virtual void check_feature(Class_) = 0;
 	
 #ifdef Feature_EXTRAS
    Feature_EXTRAS
@@ -202,7 +202,7 @@ public:
    Feature copy_Feature();
    void dump(ostream& stream, int n);
    
-	bool is_method() { return true; }
+	void check_feature(Class_);
 	Symbol get_name() { return name; }
 	Formals get_formals() { return formals; }
 	Symbol get_return_type() { return return_type; }
@@ -231,7 +231,7 @@ public:
    Feature copy_Feature();
    void dump(ostream& stream, int n);
    
-	bool is_method() { return false; }
+	void check_feature(Class_);
 	Symbol get_name() { return name; }
 	Symbol get_type_decl() { return type_decl; }
 

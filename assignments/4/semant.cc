@@ -114,7 +114,7 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
 			}
 	
 	object_table=new SymbolTable<Symbol, Symbol>();
-	method_table=new SymbolTable<Symbol, method_class>();
+	method_table=new SymbolTable<Symbol, Symbol>();
 }
 
 bool ClassTable::check_if_valid_parents() {
@@ -271,12 +271,17 @@ void ClassTable::install_basic_classes() {
 }
 
 
-void ClassTable::construct_symbol_tables() {
+void ClassTable::check_features() {
 	
 	//iterate over each class
 	for(std::map<Symbol, Class_>::iterator it=class_map.begin(); it!=class_map.end(); it++) {
 		
 		Class_ cur_class=it->second;
+		
+		//skip basic classes
+		if(cur_class->get_name()==IO || cur_class->get_name()==Int || cur_class->get_name()==Str || cur_class->get_name()==Bool || cur_class->get_name()==Object)
+			continue;
+		
 		Features features=cur_class->get_features();
 		
 		object_table->enterscope();
@@ -285,21 +290,47 @@ void ClassTable::construct_symbol_tables() {
 		//iterate over each Feature of the current class
 		for(int i=features->first(); features->more(i); i=features->next(i)) {
 			Feature feature=features->nth(i);
-			
-			if(feature->is_method()) {
-				method_class *method=(method_class*)feature;
-				method_table->addid(method->get_name(), method);
-			} else {
-				attr_class *attr=(attr_class*)feature;
-				object_table->addid(attr->get_name(), new Symbol(attr->get_type_decl()));
-			}
-		}		
+			feature->check_feature(cur_class);
+		}
+		
+		if(cur_class->get_name()==Main && method_table->probe(main_meth)==NULL)
+			semant_error(cur_class)<<"No 'main' method in class Main."<<endl;
 		
 		object_table->exitscope();
 		method_table->exitscope();
 	}
 }
 
+void method_class::check_feature(Class_ enclosing_class) {
+	
+	//if valid return type
+	if(return_type!=SELF_TYPE && classtable->class_map.find(return_type)==classtable->class_map.end())
+		classtable->semant_error(enclosing_class)<<"Undefined return type "<<return_type<<" in method "<<name<<"."<<endl;
+	
+	//if redefinition
+	if(classtable->method_table->probe(name)!=NULL)
+		classtable->semant_error(enclosing_class)<<"Method "<<name<<" is multiply defined."<<endl;
+	
+	classtable->method_table->addid(name, &return_type);
+	
+	//TODO: check_method()
+}
+
+void attr_class::check_feature(Class_ enclosing_class) {
+	
+	
+	//if valid type declaration
+	if(type_decl!=SELF_TYPE && classtable->class_map.find(type_decl)==classtable->class_map.end())
+		classtable->semant_error(enclosing_class)<<"Class "<<type_decl<<" of attribute "<<name<<" is undefined."<<endl;	
+	
+	//if redefinition
+	if(classtable->object_table->probe(name)!=NULL)
+		classtable->semant_error(enclosing_class)<<"Attribute "<<name<<" is multiply defined in class."<<endl;
+	
+	classtable->object_table->addid(name, &type_decl);
+	
+	//TODO: check_attr()
+}
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -353,10 +384,11 @@ void program_class::semant()
     initialize_constants();
 
     /* ClassTable constructor may do some semantic analysis */
-    ClassTable *classtable = new ClassTable(classes);
+    classtable = new ClassTable(classes);
 
     /* some semantic analysis code may go here */
-	classtable->construct_symbol_tables();
+	classtable->check_features();
+
 
     if (classtable->errors()) {
 	cerr << "Compilation halted due to static semantic errors." << endl;

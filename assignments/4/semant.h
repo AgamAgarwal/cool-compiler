@@ -26,22 +26,24 @@ private:
   int semant_errors;
   void install_basic_classes();
   ostream& error_stream;
-  
-  std::map<Symbol, Class_> class_map;
-  SymbolTable<Symbol, Symbol> *object_table;
-  SymbolTable<Symbol, method_class> *method_table;
 
 public:
+  std::map<Symbol, Class_> class_map;
+  SymbolTable<Symbol, Symbol> *object_table;
+  SymbolTable<Symbol, Symbol> *method_table;
+  
   ClassTable(Classes);
   bool check_if_valid_parents();
   bool check_inheritance_cycles();
-  void construct_symbol_tables();
+  void check_features();
   int errors() { return semant_errors; }
   ostream& semant_error();
   ostream& semant_error(Class_ c);
   ostream& semant_error(Symbol filename, tree_node *t);
 };
 
+
+ClassTable *classtable;
 
 #endif
 
