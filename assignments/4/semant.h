@@ -27,7 +27,7 @@ private:
   void install_basic_classes();
   ostream& error_stream;
   
-  std::map<Symbol, Class_> inheritance_graph;
+  std::map<Symbol, Class_> class_map;
 
 public:
   ClassTable(Classes);

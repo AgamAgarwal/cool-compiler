@@ -92,7 +92,7 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
 	//construct inheritance graph
 	for(i=classes->first(); classes->more(i); i=classes->next(i)) {
 		Class_ cur_class=classes->nth(i);
-		inheritance_graph.insert(std::pair<Symbol, Class_>(cur_class->get_name(), cur_class));
+		class_map.insert(std::pair<Symbol, Class_>(cur_class->get_name(), cur_class));
 	}
 	
 	check_inheritance_cycles();
@@ -101,17 +101,17 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
 
 void ClassTable::check_inheritance_cycles() {
 	
-	for(std::map<Symbol, Class_>::iterator it=inheritance_graph.begin(); it!=inheritance_graph.end(); it++) {
+	for(std::map<Symbol, Class_>::iterator it=class_map.begin(); it!=class_map.end(); it++) {
 		Symbol cur_class, slow_class_ref, fast_class_ref;
 		cur_class=slow_class_ref=fast_class_ref=it->first;
 		
-		while(slow_class_ref!=Object && fast_class_ref!=Object && inheritance_graph[fast_class_ref]->get_parent()!=Object) {
-			slow_class_ref=inheritance_graph[slow_class_ref]->get_parent();
-			fast_class_ref=inheritance_graph[inheritance_graph[fast_class_ref]->get_parent()]->get_parent();
+		while(slow_class_ref!=Object && fast_class_ref!=Object && class_map[fast_class_ref]->get_parent()!=Object) {
+			slow_class_ref=class_map[slow_class_ref]->get_parent();
+			fast_class_ref=class_map[class_map[fast_class_ref]->get_parent()]->get_parent();
 			
 			//if loop is found
 			if(slow_class_ref==fast_class_ref) {
-				semant_error(inheritance_graph[cur_class])<<"Class "<<cur_class<<", or an ancestor of "<<cur_class<<", is involved in an inheritance cycle."<<endl;
+				semant_error(class_map[cur_class])<<"Class "<<cur_class<<", or an ancestor of "<<cur_class<<", is involved in an inheritance cycle."<<endl;
 				break;
 			}
 		}
@@ -219,11 +219,11 @@ void ClassTable::install_basic_classes() {
 	       filename);
 	       
 	//add the basic classes to the inheritance graph
-	inheritance_graph.insert(std::pair<Symbol, Class_>(Object, Object_class));
-	inheritance_graph.insert(std::pair<Symbol, Class_>(IO, IO_class));
-	inheritance_graph.insert(std::pair<Symbol, Class_>(Int, Int_class));
-	inheritance_graph.insert(std::pair<Symbol, Class_>(Bool, Bool_class));
-	inheritance_graph.insert(std::pair<Symbol, Class_>(Str, Str_class));
+	class_map.insert(std::pair<Symbol, Class_>(Object, Object_class));
+	class_map.insert(std::pair<Symbol, Class_>(IO, IO_class));
+	class_map.insert(std::pair<Symbol, Class_>(Int, Int_class));
+	class_map.insert(std::pair<Symbol, Class_>(Bool, Bool_class));
+	class_map.insert(std::pair<Symbol, Class_>(Str, Str_class));
 }
 
 ////////////////////////////////////////////////////////////////////
