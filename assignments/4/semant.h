@@ -31,7 +31,8 @@ private:
 
 public:
   ClassTable(Classes);
-  void check_inheritance_cycles();
+  bool check_if_valid_parents();
+  bool check_inheritance_cycles();
   int errors() { return semant_errors; }
   ostream& semant_error();
   ostream& semant_error(Class_ c);

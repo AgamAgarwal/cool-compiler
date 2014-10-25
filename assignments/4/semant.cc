@@ -89,18 +89,58 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
 	
 	install_basic_classes();
 	
+	bool Main_class_not_defined_error=true, class_redefinition_error=false;
 	//construct inheritance graph
 	for(i=classes->first(); classes->more(i); i=classes->next(i)) {
 		Class_ cur_class=classes->nth(i);
+		
+		//check if Main class
+		if(cur_class->get_name()==Main)
+			Main_class_not_defined_error=false;
+		
+		//check if redefinition
+		if(class_map.find(cur_class->get_name())!=class_map.end()) {
+			semant_error(cur_class)<<"Class "<<(cur_class->get_name())<<" was previously defined."<<endl;
+			class_redefinition_error=true;
+		}
+		
 		class_map.insert(std::pair<Symbol, Class_>(cur_class->get_name(), cur_class));
 	}
 	
-	check_inheritance_cycles();
+	if(!check_if_valid_parents() && !class_redefinition_error)
+		if(!check_inheritance_cycles())
+			if(Main_class_not_defined_error) {
+				semant_error()<<"Class Main is not defined."<<endl;
+			}
 	
 }
 
-void ClassTable::check_inheritance_cycles() {
+bool ClassTable::check_if_valid_parents() {
 	
+	bool error=false;
+	for(std::map<Symbol, Class_>::iterator it=class_map.begin(); it!=class_map.end(); it++) {
+		Symbol child_class_symbol=it->first, parent_class_symbol=it->second->get_parent();
+		if(child_class_symbol==Object)
+			continue;
+		
+		//check if parent is defined
+		if(class_map.find(parent_class_symbol)==class_map.end()) {
+			semant_error(it->second)<<"Class "<<child_class_symbol<<" inherits from an undefined class "<<parent_class_symbol<<"."<<endl;
+			error=true;
+		}
+		
+		//check if inheritance from Int, String or Bool
+		if(parent_class_symbol==Int || parent_class_symbol==Str || parent_class_symbol==Bool) {
+			semant_error(it->second)<<"Class "<<child_class_symbol<<" cannot inherit class "<<parent_class_symbol<<"."<<endl;
+			error=true;
+		}
+	}
+	return error;
+}
+
+bool ClassTable::check_inheritance_cycles() {
+	
+	bool error=false;
 	for(std::map<Symbol, Class_>::iterator it=class_map.begin(); it!=class_map.end(); it++) {
 		Symbol cur_class, slow_class_ref, fast_class_ref;
 		cur_class=slow_class_ref=fast_class_ref=it->first;
@@ -112,10 +152,12 @@ void ClassTable::check_inheritance_cycles() {
 			//if loop is found
 			if(slow_class_ref==fast_class_ref) {
 				semant_error(class_map[cur_class])<<"Class "<<cur_class<<", or an ancestor of "<<cur_class<<", is involved in an inheritance cycle."<<endl;
+				error=true;
 				break;
 			}
 		}
 	}
+	return error;
 }
 
 void ClassTable::install_basic_classes() {
