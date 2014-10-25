@@ -85,7 +85,11 @@ static void initialize_constants(void)
 
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) {
 
-    /* Fill this in */
+	int i;
+	for(i=classes->first(); classes->more(i); i=classes->next(i)) {
+		Class_ x=classes->nth(i);
+		cout<<x->get_parent()<<endl;
+	}
 
 }
 
