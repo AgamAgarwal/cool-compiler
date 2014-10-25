@@ -28,11 +28,14 @@ private:
   ostream& error_stream;
   
   std::map<Symbol, Class_> class_map;
+  SymbolTable<Symbol, Symbol> *object_table;
+  SymbolTable<Symbol, method_class> *method_table;
 
 public:
   ClassTable(Classes);
   bool check_if_valid_parents();
   bool check_inheritance_cycles();
+  void construct_symbol_tables();
   int errors() { return semant_errors; }
   ostream& semant_error();
   ostream& semant_error(Class_ c);

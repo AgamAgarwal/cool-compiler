@@ -39,6 +39,7 @@ public:
 	//virual methods to access data
 	virtual Symbol get_name() = 0;
 	virtual Symbol get_parent() = 0;
+	virtual Features get_features() = 0;
 	
 
 #ifdef Class__EXTRAS
@@ -55,6 +56,9 @@ public:
    tree_node *copy()		 { return copy_Feature(); }
    virtual Feature copy_Feature() = 0;
 
+	//function to check type of feature
+	virtual bool is_method() = 0;
+	
 #ifdef Feature_EXTRAS
    Feature_EXTRAS
 #endif
@@ -170,6 +174,7 @@ public:
    //implementation of virtual functions from Class__class
    Symbol get_name() { return name; }
    Symbol get_parent() { return parent; }
+   Features get_features() { return features; }
 
 #ifdef Class__SHARED_EXTRAS
    Class__SHARED_EXTRAS
@@ -196,6 +201,11 @@ public:
    }
    Feature copy_Feature();
    void dump(ostream& stream, int n);
+   
+	bool is_method() { return true; }
+	Symbol get_name() { return name; }
+	Formals get_formals() { return formals; }
+	Symbol get_return_type() { return return_type; }
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
@@ -220,6 +230,10 @@ public:
    }
    Feature copy_Feature();
    void dump(ostream& stream, int n);
+   
+	bool is_method() { return false; }
+	Symbol get_name() { return name; }
+	Symbol get_type_decl() { return type_decl; }
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS

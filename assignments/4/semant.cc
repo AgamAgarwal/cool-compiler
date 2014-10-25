@@ -113,6 +113,8 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
 				semant_error()<<"Class Main is not defined."<<endl;
 			}
 	
+	object_table=new SymbolTable<Symbol, Symbol>();
+	method_table=new SymbolTable<Symbol, method_class>();
 }
 
 bool ClassTable::check_if_valid_parents() {
@@ -268,6 +270,37 @@ void ClassTable::install_basic_classes() {
 	class_map.insert(std::pair<Symbol, Class_>(Str, Str_class));
 }
 
+
+void ClassTable::construct_symbol_tables() {
+	
+	//iterate over each class
+	for(std::map<Symbol, Class_>::iterator it=class_map.begin(); it!=class_map.end(); it++) {
+		
+		Class_ cur_class=it->second;
+		Features features=cur_class->get_features();
+		
+		object_table->enterscope();
+		method_table->enterscope();
+		
+		//iterate over each Feature of the current class
+		for(int i=features->first(); features->more(i); i=features->next(i)) {
+			Feature feature=features->nth(i);
+			
+			if(feature->is_method()) {
+				method_class *method=(method_class*)feature;
+				method_table->addid(method->get_name(), method);
+			} else {
+				attr_class *attr=(attr_class*)feature;
+				object_table->addid(attr->get_name(), new Symbol(attr->get_type_decl()));
+			}
+		}		
+		
+		object_table->exitscope();
+		method_table->exitscope();
+	}
+}
+
+
 ////////////////////////////////////////////////////////////////////
 //
 // semant_error is an overloaded function for reporting errors
@@ -323,6 +356,7 @@ void program_class::semant()
     ClassTable *classtable = new ClassTable(classes);
 
     /* some semantic analysis code may go here */
+	classtable->construct_symbol_tables();
 
     if (classtable->errors()) {
 	cerr << "Compilation halted due to static semantic errors." << endl;
