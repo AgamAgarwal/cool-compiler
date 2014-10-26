@@ -59,6 +59,9 @@ public:
 	//function to check the feature
 	virtual void add_feature(Class_) = 0;
 	virtual void check_feature(Class_) = 0;
+	virtual bool is_method() = 0;
+	
+	virtual Symbol get_name() = 0;
 	
 #ifdef Feature_EXTRAS
    Feature_EXTRAS
@@ -77,6 +80,8 @@ public:
 	//function to check the formal
 	virtual void check_and_add_formal(Class_) = 0;
 
+	virtual Symbol get_name() = 0;
+	virtual Symbol get_type_decl() = 0;
 #ifdef Formal_EXTRAS
    Formal_EXTRAS
 #endif
@@ -138,6 +143,7 @@ typedef Expressions_class *Expressions;
 // define list phlyum - Cases
 typedef list_node<Case> Cases_class;
 typedef Cases_class *Cases;
+
 
 
 // define the class for constructors
@@ -212,7 +218,9 @@ public:
 	void add_feature(Class_);
 	void check_feature(Class_);
 	Symbol get_name() { return name; }
+	Formals get_formals() { return formals; }
 	Symbol get_return_type() { return return_type; }
+	bool is_method() { return true; }
 	
 	void check_and_add_formals(Class_);
 
@@ -244,6 +252,7 @@ public:
 	void check_feature(Class_);
 	Symbol get_name() { return name; }
 	Symbol get_type_decl() { return type_decl; }
+	bool is_method() { return false; }
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
@@ -269,6 +278,9 @@ public:
    
 	//function to check the formal
 	void check_and_add_formal(Class_);
+
+	Symbol get_name()	{ return name; }
+	Symbol get_type_decl() { return type_decl; }
 
 #ifdef Formal_SHARED_EXTRAS
    Formal_SHARED_EXTRAS
@@ -344,6 +356,8 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
+	Symbol check_expression(Class_);
+
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -367,6 +381,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+
+	Symbol check_expression(Class_);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS

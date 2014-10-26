@@ -425,6 +425,29 @@ Symbol find_common_ancestor(Symbol type1, Symbol type2) {
 	return type1;
 }
 
+
+/* finds a method in the ancestor list */
+method_class* find_method(Symbol class_name, Symbol method_name) {
+	
+	while(class_name!=No_class) {
+		
+		//get the Class_ object
+		Class_ cur_class=classtable->class_map[class_name];
+		
+		//get its features
+		Features features=cur_class->get_features();
+		
+		//iterate over features to find the method
+		for(int i=features->first(); features->more(i); i=features->next(i)) {
+			Feature cur_feature=features->nth(i);
+			if(cur_feature->is_method() && cur_feature->get_name()==method_name)
+				return (method_class*)cur_feature;
+		}
+		class_name=cur_class->get_parent();
+	}
+	return NULL;
+}
+
 /* Expression functions */
 
 //TODO: remove this function when done all
@@ -447,6 +470,97 @@ Symbol assign_class::check_expression(Class_ enclosing_class) {
 		classtable->semant_error(enclosing_class)<<"Type "<<type_expr<<" of assigned expression does not conform to declared type "<<*type_object<<" of identifier "<<name<<"."<<endl;
 	
 	set_type(type_expr);
+	return get_type();
+}
+
+Symbol static_dispatch_class::check_expression(Class_ enclosing_class) {
+	
+	Symbol type_expr=expr->check_expression(enclosing_class);
+	
+	set_type(Object);	//default
+	
+	//check each of the actuals and set their types
+	for(int i=actual->first(); actual->more(i); i=actual->next(i))
+		actual->nth(i)->check_expression(enclosing_class);
+	
+	//check if static dispatch type exists
+	if(classtable->class_map.find(type_name)==classtable->class_map.end())
+		classtable->semant_error(enclosing_class)<<"Static dispatch to undefined class "<<type_name<<"."<<endl;
+	
+	//check if expr type conforms to static dispatch type
+	else if(classtable->class_map.find(type_expr)!=classtable->class_map.end()	//type_expr is defined
+		&& !type_conforms(type_expr, type_name))
+		classtable->semant_error(enclosing_class)<<"Expression type "<<type_expr<<" does not conform to declared static dispatch type "<<type_name<<"."<<endl;
+	
+	else {
+
+		method_class* method=NULL;
+		
+		//find the method in the ancestor list of type_name
+		if((method=find_method(type_name, name))==NULL) {
+				classtable->semant_error(enclosing_class)<<"Static dispatch to undefined method "<<name<<"."<<endl;
+			}
+		
+		else {
+			//compare the formals' and actuals' length
+			if(method->get_formals()->len()!=actual->len())
+				classtable->semant_error(enclosing_class)<<"Method "<<name<<" called with wrong number of arguments."<<endl;
+		
+			//compare the formals' and actuals' types
+			else {
+				Formals formals=method->get_formals();
+				
+				for(int i=0; i<actual->len(); i++)
+					if(!type_conforms(actual->nth(i)->get_type(), formals->nth(i)->get_type_decl()))
+						classtable->semant_error(enclosing_class)<<"In call of method "<<name<<", type "<<actual->nth(i)->get_type()<<" of parameter "<<formals->nth(i)->get_name()<<" does not conform to declared type "<<formals->nth(i)->get_type_decl()<<"."<<endl;
+			}
+			
+			set_type(method->get_return_type());
+		}
+	}
+	
+	return get_type();
+}
+
+Symbol dispatch_class::check_expression(Class_ enclosing_class) {
+	
+	//TODO: check for 'self'
+	
+	Symbol type_name=expr->check_expression(enclosing_class);
+	
+	set_type(Object);	//default
+	method_class* method=NULL;
+	
+	//check each of the actuals and set their types
+	for(int i=actual->first(); actual->more(i); i=actual->next(i))
+		actual->nth(i)->check_expression(enclosing_class);
+	
+	//check if type_name is valid
+	if(classtable->class_map.find(type_name)==classtable->class_map.end())
+		classtable->semant_error(enclosing_class)<<"Dispatch on undefined class "<<type_name<<"."<<endl;
+	
+	//find the method in the ancestor list of type_name
+	else if((method=find_method(type_name, name))==NULL)
+			classtable->semant_error(enclosing_class)<<"Dispatch to undefined method "<<name<<"."<<endl;
+	
+	
+	else {
+		
+		//compare the formals' and actuals' length
+		if(method->get_formals()->len()!=actual->len())
+			classtable->semant_error(enclosing_class)<<"Method "<<name<<" called with wrong number of arguments."<<endl;
+	
+		//compare the formals' and actuals' types
+		else {
+			Formals formals=method->get_formals();
+			
+			for(int i=0; i<actual->len(); i++)
+				if(!type_conforms(actual->nth(i)->get_type(), formals->nth(i)->get_type_decl()))
+					classtable->semant_error(enclosing_class)<<"In call of method "<<name<<", type "<<actual->nth(i)->get_type()<<" of parameter "<<formals->nth(i)->get_name()<<" does not conform to declared type "<<formals->nth(i)->get_type_decl()<<"."<<endl;
+		}
+		
+		set_type(method->get_return_type());
+	}
 	return get_type();
 }
 
@@ -682,7 +796,11 @@ Symbol object_class::check_expression(Class_ enclosing_class) {
 	
 	//check in current scope
 	Symbol *type;
-	if((type=classtable->object_table->lookup(name))==NULL) {
+	
+	//TODO: remove this Kludge
+	if(name==self)
+		set_type(enclosing_class->get_name());
+	else if((type=classtable->object_table->lookup(name))==NULL) {
 		classtable->semant_error(enclosing_class)<<"Undeclared identifier "<<name<<"."<<endl;
 		set_type(Object);
 	} else
