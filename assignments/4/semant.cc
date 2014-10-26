@@ -313,7 +313,32 @@ void method_class::check_feature(Class_ enclosing_class) {
 	
 	classtable->method_table->addid(name, &return_type);
 	
-	//TODO: check_method()
+	classtable->object_table->enterscope();	//entering a new method
+	check_formals(enclosing_class);
+	//TODO: check_expression()
+	classtable->object_table->exitscope();
+	
+}
+
+void method_class::check_formals(Class_ enclosing_class) {
+	
+	for(int i=formals->first(); formals->more(i); i=formals->next(i))
+		formals->nth(i)->check_formal(enclosing_class);
+}
+
+void formal_class::check_formal(Class_ enclosing_class) {
+	
+	//check if redefinition
+	if(classtable->object_table->probe(name)!=NULL)
+		classtable->semant_error(enclosing_class)<<"Formal parameter "<<name<<" is multiply defined."<<endl;
+	
+	//check if invalid type
+	if(classtable->class_map.find(type_decl)==classtable->class_map.end())
+		classtable->semant_error(enclosing_class)<<"Class "<<type_decl<<" of formal parameter "<<name<<" is undefined."<<endl;
+	
+	//add to object table
+	classtable->object_table->addid(name, &type_decl);
+	
 }
 
 void attr_class::check_feature(Class_ enclosing_class) {

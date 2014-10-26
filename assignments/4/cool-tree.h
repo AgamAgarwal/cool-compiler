@@ -72,6 +72,9 @@ class Formal_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Formal(); }
    virtual Formal copy_Formal() = 0;
+	
+	//function to check the formal
+	virtual void check_formal(Class_) = 0;
 
 #ifdef Formal_EXTRAS
    Formal_EXTRAS
@@ -204,8 +207,9 @@ public:
    
 	void check_feature(Class_);
 	Symbol get_name() { return name; }
-	Formals get_formals() { return formals; }
 	Symbol get_return_type() { return return_type; }
+	
+	void check_formals(Class_);
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
@@ -256,6 +260,9 @@ public:
    }
    Formal copy_Formal();
    void dump(ostream& stream, int n);
+   
+	//function to check the formal
+	void check_formal(Class_);
 
 #ifdef Formal_SHARED_EXTRAS
    Formal_SHARED_EXTRAS
