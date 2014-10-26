@@ -476,6 +476,19 @@ Symbol loop_class::check_expression(Class_ enclosing_class) {
 	return get_type();
 }
 
+Symbol block_class::check_expression(Class_ enclosing_class) {
+	
+	Symbol type_expr;
+	
+	//iterate over list of Expressions in the block
+	for(int i=body->first(); body->more(i); i=body->next(i))
+		type_expr=body->nth(i)->check_expression(enclosing_class);
+	
+	set_type(type_expr);
+	return get_type();
+	
+}
+
 Symbol plus_class::check_expression(Class_ enclosing_class)	{
 	
 	Symbol type1=e1->check_expression(enclosing_class);
