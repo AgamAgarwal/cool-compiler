@@ -408,7 +408,8 @@ Symbol plus_class::check_expression(Class_ enclosing_class)	{
 	if(type1!=Int || type2!=Int)
 		classtable->semant_error(enclosing_class)<<"non-Int arguments: "<<type1<<" + "<<type2<<endl;
 	
-	return Int;
+	set_type(Int);
+	return get_type();
 }
 
 Symbol sub_class::check_expression(Class_ enclosing_class)	{
@@ -420,7 +421,8 @@ Symbol sub_class::check_expression(Class_ enclosing_class)	{
 	if(type1!=Int || type2!=Int)
 		classtable->semant_error(enclosing_class)<<"non-Int arguments: "<<type1<<" - "<<type2<<endl;
 	
-	return Int;
+	set_type(Int);
+	return get_type();
 }
 
 Symbol mul_class::check_expression(Class_ enclosing_class)	{
@@ -432,7 +434,8 @@ Symbol mul_class::check_expression(Class_ enclosing_class)	{
 	if(type1!=Int || type2!=Int)
 		classtable->semant_error(enclosing_class)<<"non-Int arguments: "<<type1<<" * "<<type2<<endl;
 	
-	return Int;
+	set_type(Int);
+	return get_type();
 }
 
 Symbol divide_class::check_expression(Class_ enclosing_class)	{
@@ -444,7 +447,8 @@ Symbol divide_class::check_expression(Class_ enclosing_class)	{
 	if(type1!=Int || type2!=Int)
 		classtable->semant_error(enclosing_class)<<"non-Int arguments: "<<type1<<" / "<<type2<<endl;
 	
-	return Int;
+	set_type(Int);
+	return get_type();
 }
 
 Symbol neg_class::check_expression(Class_ enclosing_class) {
@@ -455,7 +459,8 @@ Symbol neg_class::check_expression(Class_ enclosing_class) {
 	if(type1!=Int)
 		classtable->semant_error(enclosing_class)<<"Argument of '~' has type "<<type1<<" instead of Int."<<endl;
 	
-	return Int;
+	set_type(Int);
+	return get_type();
 }
 
 Symbol lt_class::check_expression(Class_ enclosing_class)	{
@@ -467,7 +472,8 @@ Symbol lt_class::check_expression(Class_ enclosing_class)	{
 	if(type1!=Int || type2!=Int)
 		classtable->semant_error(enclosing_class)<<"non-Int arguments: "<<type1<<" < "<<type2<<endl;
 	
-	return Bool;
+	set_type(Bool);
+	return get_type();
 }
 
 Symbol eq_class::check_expression(Class_ enclosing_class)	{
@@ -482,7 +488,8 @@ Symbol eq_class::check_expression(Class_ enclosing_class)	{
 		&& type1!=type2)
 		classtable->semant_error(enclosing_class)<<"Illegal comparison with a basic type."<<endl;
 	
-	return Bool;
+	set_type(Bool);
+	return get_type();
 }
 
 Symbol leq_class::check_expression(Class_ enclosing_class)	{
@@ -494,7 +501,8 @@ Symbol leq_class::check_expression(Class_ enclosing_class)	{
 	if(type1!=Int || type2!=Int)
 		classtable->semant_error(enclosing_class)<<"non-Int arguments: "<<type1<<" <= "<<type2<<endl;
 	
-	return Bool;
+	set_type(Bool);
+	return get_type();
 }
 
 Symbol comp_class::check_expression(Class_ enclosing_class) {
@@ -505,19 +513,23 @@ Symbol comp_class::check_expression(Class_ enclosing_class) {
 	if(type!=Bool)
 		classtable->semant_error(enclosing_class)<<"Argument of 'not' has type "<<type<<" instead of Bool."<<endl;
 	
-	return Bool;
+	set_type(Bool);
+	return get_type();
 }
 
 Symbol int_const_class::check_expression(Class_ enclosing_class) {
-	return Int;
+	set_type(Int);
+	return get_type();
 }
 
 Symbol bool_const_class::check_expression(Class_ enclosing_class) {
-	return Bool;
+	set_type(Bool);
+	return get_type();
 }
 
 Symbol string_const_class::check_expression(Class_ enclosing_class) {
-	return Str;
+	set_type(Str);
+	return get_type();
 }
 
 Symbol new__class::check_expression(Class_ enclosing_class) {
@@ -525,10 +537,11 @@ Symbol new__class::check_expression(Class_ enclosing_class) {
 	//check if type exists
 	if(classtable->class_map.find(type_name)==classtable->class_map.end()) {
 		classtable->semant_error(enclosing_class)<<"'new' used with undefined class "<<type_name<<"."<<endl;
-		return Object;
-	}
+		set_type(Object);
+	} else
+		set_type(type_name);
 	
-	return type_name;
+	return get_type();
 }
 
 Symbol isvoid_class::check_expression(Class_ enclosing_class) {
@@ -536,11 +549,13 @@ Symbol isvoid_class::check_expression(Class_ enclosing_class) {
 	//just check the expression. No need to check its type
 	e1->check_expression(enclosing_class);
 	
-	return Bool;
+	set_type(Bool);
+	return get_type();
 }
 
 Symbol no_expr_class::check_expression(Class_ enclosing_class) {
-	return No_type;
+	set_type(No_type);
+	return get_type();
 }
 
 Symbol object_class::check_expression(Class_ enclosing_class) {
@@ -549,10 +564,11 @@ Symbol object_class::check_expression(Class_ enclosing_class) {
 	Symbol *type;
 	if((type=classtable->object_table->lookup(name))==NULL) {
 		classtable->semant_error(enclosing_class)<<"Undeclared identifier "<<name<<"."<<endl;
-		return Object;
-	}
+		set_type(Object);
+	} else
+		set_type(*type);
 	
-	return *type;
+	return get_type();
 }
 
 ////////////////////////////////////////////////////////////////////
