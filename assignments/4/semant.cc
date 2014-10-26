@@ -317,6 +317,8 @@ void method_class::add_feature(Class_ enclosing_class) {
 	if(classtable->method_table->probe(name)!=NULL)
 		classtable->semant_error(enclosing_class)<<"Method "<<name<<" is multiply defined."<<endl;
 	
+	//TODO: check overridden functions
+	
 	classtable->method_table->addid(name, &return_type);
 	
 }
@@ -383,7 +385,7 @@ bool type_conforms(Symbol child, Symbol parent) {
 
 /* Expression functions */
 
-//TODO: remove this function when
+//TODO: remove this function when done all
 Symbol Expression_class::check_expression(Class_)	{
 	return No_type;
 }
@@ -402,6 +404,18 @@ Symbol string_const_class::check_expression(Class_ enclosing_class) {
 
 Symbol no_expr_class::check_expression(Class_ enclosing_class) {
 	return No_type;
+}
+
+Symbol object_class::check_expression(Class_ enclosing_class) {
+	
+	//check in current scope
+	Symbol *type;
+	if((type=classtable->object_table->lookup(name))==NULL) {
+		classtable->semant_error(enclosing_class)<<"Undeclared identifier "<<name<<"."<<endl;
+		return Object;
+	}
+	
+	return *type;
 }
 
 ////////////////////////////////////////////////////////////////////
