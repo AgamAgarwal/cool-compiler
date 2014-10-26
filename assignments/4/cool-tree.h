@@ -57,6 +57,7 @@ public:
    virtual Feature copy_Feature() = 0;
 
 	//function to check the feature
+	virtual void add_feature(Class_) = 0;
 	virtual void check_feature(Class_) = 0;
 	
 #ifdef Feature_EXTRAS
@@ -74,7 +75,7 @@ public:
    virtual Formal copy_Formal() = 0;
 	
 	//function to check the formal
-	virtual void check_formal(Class_) = 0;
+	virtual void check_and_add_formal(Class_) = 0;
 
 #ifdef Formal_EXTRAS
    Formal_EXTRAS
@@ -205,11 +206,12 @@ public:
    Feature copy_Feature();
    void dump(ostream& stream, int n);
    
+	void add_feature(Class_);
 	void check_feature(Class_);
 	Symbol get_name() { return name; }
 	Symbol get_return_type() { return return_type; }
 	
-	void check_formals(Class_);
+	void check_and_add_formals(Class_);
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
@@ -235,6 +237,7 @@ public:
    Feature copy_Feature();
    void dump(ostream& stream, int n);
    
+	void add_feature(Class_);
 	void check_feature(Class_);
 	Symbol get_name() { return name; }
 	Symbol get_type_decl() { return type_decl; }
@@ -262,7 +265,7 @@ public:
    void dump(ostream& stream, int n);
    
 	//function to check the formal
-	void check_formal(Class_);
+	void check_and_add_formal(Class_);
 
 #ifdef Formal_SHARED_EXTRAS
    Formal_SHARED_EXTRAS

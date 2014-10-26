@@ -287,21 +287,27 @@ void ClassTable::check_features() {
 		object_table->enterscope();
 		method_table->enterscope();
 		
-		//iterate over each Feature of the current class
+		//iterate over each Feature of the current class and add them
 		for(int i=features->first(); features->more(i); i=features->next(i)) {
 			Feature feature=features->nth(i);
-			feature->check_feature(cur_class);
+			feature->add_feature(cur_class);
 		}
 		
 		if(cur_class->get_name()==Main && method_table->probe(main_meth)==NULL)
 			semant_error(cur_class)<<"No 'main' method in class Main."<<endl;
+		
+		//iterate over each Feature of the current class and check their semantics
+		for(int i=features->first(); features->more(i); i=features->next(i)) {
+			Feature feature=features->nth(i);
+			feature->check_feature(cur_class);
+		}
 		
 		object_table->exitscope();
 		method_table->exitscope();
 	}
 }
 
-void method_class::check_feature(Class_ enclosing_class) {
+void method_class::add_feature(Class_ enclosing_class) {
 	
 	//if valid return type
 	if(return_type!=SELF_TYPE && classtable->class_map.find(return_type)==classtable->class_map.end())
@@ -313,20 +319,15 @@ void method_class::check_feature(Class_ enclosing_class) {
 	
 	classtable->method_table->addid(name, &return_type);
 	
-	classtable->object_table->enterscope();	//entering a new method
-	check_formals(enclosing_class);
-	//TODO: check_expression()
-	classtable->object_table->exitscope();
-	
 }
 
-void method_class::check_formals(Class_ enclosing_class) {
+void method_class::check_and_add_formals(Class_ enclosing_class) {
 	
 	for(int i=formals->first(); formals->more(i); i=formals->next(i))
-		formals->nth(i)->check_formal(enclosing_class);
+		formals->nth(i)->check_and_add_formal(enclosing_class);
 }
 
-void formal_class::check_formal(Class_ enclosing_class) {
+void formal_class::check_and_add_formal(Class_ enclosing_class) {
 	
 	//check if redefinition
 	if(classtable->object_table->probe(name)!=NULL)
@@ -341,7 +342,14 @@ void formal_class::check_formal(Class_ enclosing_class) {
 	
 }
 
-void attr_class::check_feature(Class_ enclosing_class) {
+void method_class::check_feature(Class_ enclosing_class) {
+	classtable->object_table->enterscope();	//entering a new method
+	check_and_add_formals(enclosing_class);
+	//TODO: check_expression()
+	classtable->object_table->exitscope();
+}
+
+void attr_class::add_feature(Class_ enclosing_class) {
 	
 	
 	//if valid type declaration
@@ -354,7 +362,12 @@ void attr_class::check_feature(Class_ enclosing_class) {
 	
 	classtable->object_table->addid(name, &type_decl);
 	
-	//TODO: check_attr()
+}
+
+void attr_class::check_feature(Class_ enclosing_class) {
+	
+	//TODO: check if optional initialization
+		//TODO: check if correct type
 }
 
 ////////////////////////////////////////////////////////////////////
