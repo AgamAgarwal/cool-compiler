@@ -399,6 +399,24 @@ Symbol Expression_class::check_expression(Class_)	{
 	return No_type;
 }
 
+Symbol assign_class::check_expression(Class_ enclosing_class) {
+	
+	//check expression
+	Symbol type_expr=expr->check_expression(enclosing_class);
+	
+	//check if OBJECTID is declared in this or ancestor scopes
+	Symbol *type_object;
+	if((type_object=classtable->object_table->lookup(name))==NULL)
+		classtable->semant_error(enclosing_class)<<"Assignment to undeclared variable "<<name<<"."<<endl;
+	
+	//check if type conforms
+	if(type_object!=NULL && !type_conforms(type_expr, *type_object))
+		classtable->semant_error(enclosing_class)<<"Type "<<type_expr<<" of assigned expression does not conform to declared type "<<*type_object<<" of identifier "<<name<<"."<<endl;
+	
+	set_type(type_expr);
+	return get_type();
+}
+
 Symbol plus_class::check_expression(Class_ enclosing_class)	{
 	
 	Symbol type1=e1->check_expression(enclosing_class);
