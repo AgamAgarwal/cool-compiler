@@ -502,6 +502,8 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
+	Symbol check_expression(Class_);
+
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -523,6 +525,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+
+	Symbol check_expression(Class_);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -546,6 +550,8 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
+	Symbol check_expression(Class_);
+
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -567,6 +573,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+
+	Symbol check_expression(Class_);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS

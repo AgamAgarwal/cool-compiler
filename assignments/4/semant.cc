@@ -399,6 +399,54 @@ Symbol Expression_class::check_expression(Class_)	{
 	return No_type;
 }
 
+Symbol plus_class::check_expression(Class_ enclosing_class)	{
+	
+	Symbol type1=e1->check_expression(enclosing_class);
+	Symbol type2=e2->check_expression(enclosing_class);
+	
+	//check if both are not Int
+	if(type1!=Int || type2!=Int)
+		classtable->semant_error(enclosing_class)<<"non-Int arguments: "<<type1<<" + "<<type2<<endl;
+	
+	return Int;
+}
+
+Symbol sub_class::check_expression(Class_ enclosing_class)	{
+	
+	Symbol type1=e1->check_expression(enclosing_class);
+	Symbol type2=e2->check_expression(enclosing_class);
+	
+	//check if both are not Int
+	if(type1!=Int || type2!=Int)
+		classtable->semant_error(enclosing_class)<<"non-Int arguments: "<<type1<<" - "<<type2<<endl;
+	
+	return Int;
+}
+
+Symbol mul_class::check_expression(Class_ enclosing_class)	{
+	
+	Symbol type1=e1->check_expression(enclosing_class);
+	Symbol type2=e2->check_expression(enclosing_class);
+	
+	//check if both are not Int
+	if(type1!=Int || type2!=Int)
+		classtable->semant_error(enclosing_class)<<"non-Int arguments: "<<type1<<" * "<<type2<<endl;
+	
+	return Int;
+}
+
+Symbol divide_class::check_expression(Class_ enclosing_class)	{
+	
+	Symbol type1=e1->check_expression(enclosing_class);
+	Symbol type2=e2->check_expression(enclosing_class);
+	
+	//check if both are not Int
+	if(type1!=Int || type2!=Int)
+		classtable->semant_error(enclosing_class)<<"non-Int arguments: "<<type1<<" / "<<type2<<endl;
+	
+	return Int;
+}
+
 Symbol neg_class::check_expression(Class_ enclosing_class) {
 	
 	Symbol type1=e1->check_expression(enclosing_class);
