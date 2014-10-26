@@ -392,6 +392,38 @@ bool type_conforms(Symbol child, Symbol parent) {
 	return false;
 }
 
+/* find common ancestor */
+Symbol find_common_ancestor(Symbol type1, Symbol type2) {
+	int count1, count2;
+	count1=count2=0;
+	Symbol temp;
+	
+	//count first
+	for(temp=type1; temp!=Object; temp=classtable->class_map[temp]->get_parent(), count1++);
+	
+	//count second
+	for(temp=type2; temp!=Object; temp=classtable->class_map[temp]->get_parent(), count2++);
+	
+	while(count1>count2) {
+		type1=classtable->class_map[type1]->get_parent();
+		count1--;
+	}
+	
+	while(count2>count1) {
+		type2=classtable->class_map[type2]->get_parent();
+		count2--;
+	}
+	
+	while(true) {	//true because they will ultimately meet at Object (Adam ;-) )
+		if(type1==type2)
+			break;
+		type1=classtable->class_map[type1]->get_parent();
+		type2=classtable->class_map[type2]->get_parent();
+	}
+	
+	return type1;
+}
+
 /* Expression functions */
 
 //TODO: remove this function when done all
@@ -414,6 +446,19 @@ Symbol assign_class::check_expression(Class_ enclosing_class) {
 		classtable->semant_error(enclosing_class)<<"Type "<<type_expr<<" of assigned expression does not conform to declared type "<<*type_object<<" of identifier "<<name<<"."<<endl;
 	
 	set_type(type_expr);
+	return get_type();
+}
+
+Symbol cond_class::check_expression(Class_ enclosing_class) {
+	
+	//check if predicate is Bool
+	if(pred->check_expression(enclosing_class)!=Bool)
+		classtable->semant_error(enclosing_class)<<"Predicate of 'if' does not have type Bool."<<endl;
+	
+	Symbol type_then=then_exp->check_expression(enclosing_class);
+	Symbol type_else=else_exp->check_expression(enclosing_class);
+	
+	set_type(find_common_ancestor(type_then, type_else));
 	return get_type();
 }
 

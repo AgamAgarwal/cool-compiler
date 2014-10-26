@@ -43,6 +43,7 @@ public:
 };
 
 bool type_conforms(Symbol, Symbol);
+Symbol find_common_ancestor(Symbol, Symbol);
 ClassTable *classtable;
 
 #endif
