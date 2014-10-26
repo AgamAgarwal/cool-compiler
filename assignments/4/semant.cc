@@ -347,7 +347,12 @@ void formal_class::check_and_add_formal(Class_ enclosing_class) {
 void method_class::check_feature(Class_ enclosing_class) {
 	classtable->object_table->enterscope();	//entering a new method
 	check_and_add_formals(enclosing_class);
-	//TODO: check_expression()
+	
+	Symbol type=expr->check_expression(enclosing_class);
+	
+	if(!type_conforms(type, return_type))
+		classtable->semant_error(enclosing_class)<<"Inferred return type "<<type<<" of method "<<name<<" does not conform to declared return type "<<return_type<<"."<<endl;
+	
 	classtable->object_table->exitscope();
 }
 
