@@ -520,6 +520,17 @@ Symbol string_const_class::check_expression(Class_ enclosing_class) {
 	return Str;
 }
 
+Symbol new__class::check_expression(Class_ enclosing_class) {
+	
+	//check if type exists
+	if(classtable->class_map.find(type_name)==classtable->class_map.end()) {
+		classtable->semant_error(enclosing_class)<<"'new' used with undefined class "<<type_name<<"."<<endl;
+		return Object;
+	}
+	
+	return type_name;
+}
+
 Symbol isvoid_class::check_expression(Class_ enclosing_class) {
 	
 	//just check the expression. No need to check its type
