@@ -390,6 +390,17 @@ Symbol Expression_class::check_expression(Class_)	{
 	return No_type;
 }
 
+Symbol comp_class::check_expression(Class_ enclosing_class) {
+	
+	Symbol type=e1->check_expression(enclosing_class);
+	
+	//if not Bool
+	if(type!=Bool)
+		classtable->semant_error(enclosing_class)<<"Argument of 'not' has type "<<type<<" instead of Bool."<<endl;
+	
+	return Bool;
+}
+
 Symbol int_const_class::check_expression(Class_ enclosing_class) {
 	return Int;
 }
