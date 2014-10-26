@@ -384,8 +384,12 @@ void attr_class::check_feature(Class_ enclosing_class) {
 /* check if conforming types */
 bool type_conforms(Symbol child, Symbol parent) {
 	
-	//TODO: traverse class_map from child and check for parent
-	return child==parent;
+	while(child!=No_class) {
+		if(child==parent)
+			return true;
+		child=classtable->class_map[child]->get_parent();
+	}
+	return false;
 }
 
 /* Expression functions */
