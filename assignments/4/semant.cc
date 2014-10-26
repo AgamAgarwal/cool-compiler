@@ -520,6 +520,14 @@ Symbol string_const_class::check_expression(Class_ enclosing_class) {
 	return Str;
 }
 
+Symbol isvoid_class::check_expression(Class_ enclosing_class) {
+	
+	//just check the expression. No need to check its type
+	e1->check_expression(enclosing_class);
+	
+	return Bool;
+}
+
 Symbol no_expr_class::check_expression(Class_ enclosing_class) {
 	return No_type;
 }
