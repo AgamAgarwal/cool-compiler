@@ -348,10 +348,11 @@ void method_class::check_feature(Class_ enclosing_class) {
 	classtable->object_table->enterscope();	//entering a new method
 	check_and_add_formals(enclosing_class);
 	
-	Symbol type=expr->check_expression(enclosing_class);
+	Symbol type_expr=expr->check_expression(enclosing_class);
 	
-	if(!type_conforms(type, return_type))
-		classtable->semant_error(enclosing_class)<<"Inferred return type "<<type<<" of method "<<name<<" does not conform to declared return type "<<return_type<<"."<<endl;
+	if(classtable->class_map.find(type_expr)!=classtable->class_map.end()	//type exists
+			&& !type_conforms(type_expr, return_type))
+		classtable->semant_error(enclosing_class)<<"Inferred return type "<<type_expr<<" of method "<<name<<" does not conform to declared return type "<<return_type<<"."<<endl;
 	
 	classtable->object_table->exitscope();
 }
@@ -487,6 +488,35 @@ Symbol block_class::check_expression(Class_ enclosing_class) {
 	set_type(type_expr);
 	return get_type();
 	
+}
+
+Symbol let_class::check_expression(Class_ enclosing_class) {
+	
+	//check expression
+	Symbol type_init=init->check_expression(enclosing_class);
+	
+	
+	//check if type_decl exists
+	if(classtable->class_map.find(type_decl)==classtable->class_map.end())
+		classtable->semant_error(enclosing_class)<<"Class "<<type_decl<<" of let-bound identifier "<<identifier<<" is undefined."<<endl;
+	
+	//check if type_init conforms with declared type
+	else if(type_init!=No_type	//if init is given
+			&& !type_conforms(type_init, type_decl))
+		classtable->semant_error(enclosing_class)<<"Inferred type "<<type_init<<" of initialization of "<<identifier<<" does not conform to identifier's declared type "<<type_decl<<"."<<endl;
+	
+	
+	//enter a new scope
+	classtable->object_table->enterscope();
+	
+	classtable->object_table->addid(identifier, &type_decl);
+	
+	set_type(body->check_expression(enclosing_class));
+	
+	//exit the scope
+	classtable->object_table->exitscope();
+	
+	return get_type();
 }
 
 Symbol plus_class::check_expression(Class_ enclosing_class)	{
