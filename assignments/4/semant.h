@@ -42,7 +42,7 @@ public:
   ostream& semant_error(Symbol filename, tree_node *t);
 };
 
-
+bool type_conforms(Symbol, Symbol);
 ClassTable *classtable;
 
 #endif

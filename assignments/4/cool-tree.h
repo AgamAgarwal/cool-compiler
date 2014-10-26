@@ -91,6 +91,9 @@ public:
    tree_node *copy()		 { return copy_Expression(); }
    virtual Expression copy_Expression() = 0;
 
+	//function to check expression, set and return its type
+	virtual Symbol check_expression(Class_);
+	
 #ifdef Expression_EXTRAS
    Expression_EXTRAS
 #endif
@@ -691,6 +694,8 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
+	Symbol check_expression(Class_);
+
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -711,6 +716,8 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
+	Symbol check_expression(Class_);
+	
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -730,6 +737,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+
+	Symbol check_expression(Class_);
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -789,6 +798,8 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 
+	Symbol check_expression(Class_);
+	
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
 #endif
@@ -808,6 +819,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS

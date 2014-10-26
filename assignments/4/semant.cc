@@ -366,8 +366,42 @@ void attr_class::add_feature(Class_ enclosing_class) {
 
 void attr_class::check_feature(Class_ enclosing_class) {
 	
-	//TODO: check if optional initialization
-		//TODO: check if correct type
+	Symbol expr_type=init->check_expression(enclosing_class);
+	
+	//check type if not No_type
+	if(expr_type!=No_type && !type_conforms(expr_type, type_decl))
+		classtable->semant_error(enclosing_class)<<"Inferred type "<<expr_type<<" of initialization of attribute "<<name<<" does not conform to declared type "<<type_decl<<"."<<endl;
+}
+
+
+/* check if conforming types */
+bool type_conforms(Symbol child, Symbol parent) {
+	
+	//TODO: traverse class_map from child and check for parent
+	return child==parent;
+}
+
+/* Expression functions */
+
+//TODO: remove this function when
+Symbol Expression_class::check_expression(Class_)	{
+	return No_type;
+}
+
+Symbol int_const_class::check_expression(Class_ enclosing_class) {
+	return Int;
+}
+
+Symbol bool_const_class::check_expression(Class_ enclosing_class) {
+	return Bool;
+}
+
+Symbol string_const_class::check_expression(Class_ enclosing_class) {
+	return Str;
+}
+
+Symbol no_expr_class::check_expression(Class_ enclosing_class) {
+	return No_type;
 }
 
 ////////////////////////////////////////////////////////////////////
