@@ -462,6 +462,20 @@ Symbol cond_class::check_expression(Class_ enclosing_class) {
 	return get_type();
 }
 
+Symbol loop_class::check_expression(Class_ enclosing_class) {
+	
+	//check if predicate is Bool
+	if(pred->check_expression(enclosing_class)!=Bool)
+		classtable->semant_error(enclosing_class)<<"Loop condition does not have type Bool."<<endl;
+	
+	//check body
+	body->check_expression(enclosing_class);
+	
+	//type is always Object
+	set_type(Object);
+	return get_type();
+}
+
 Symbol plus_class::check_expression(Class_ enclosing_class)	{
 	
 	Symbol type1=e1->check_expression(enclosing_class);
