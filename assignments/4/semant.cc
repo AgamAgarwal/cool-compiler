@@ -390,6 +390,45 @@ Symbol Expression_class::check_expression(Class_)	{
 	return No_type;
 }
 
+Symbol lt_class::check_expression(Class_ enclosing_class)	{
+	
+	Symbol type1=e1->check_expression(enclosing_class);
+	Symbol type2=e2->check_expression(enclosing_class);
+	
+	//check if both are not Int
+	if(type1!=Int || type2!=Int)
+		classtable->semant_error(enclosing_class)<<"non-Int arguments: "<<type1<<" < "<<type2<<endl;
+	
+	return Bool;
+}
+
+Symbol eq_class::check_expression(Class_ enclosing_class)	{
+	
+	Symbol type1=e1->check_expression(enclosing_class);
+	Symbol type2=e2->check_expression(enclosing_class);
+	
+	//check if basic type and uncompatible
+	if(((type1==Int || type2==Int)
+			|| (type1==Str || type2==Str)
+			|| (type1==Bool || type2==Bool))
+		&& type1!=type2)
+		classtable->semant_error(enclosing_class)<<"Illegal comparison with a basic type."<<endl;
+	
+	return Bool;
+}
+
+Symbol leq_class::check_expression(Class_ enclosing_class)	{
+	
+	Symbol type1=e1->check_expression(enclosing_class);
+	Symbol type2=e2->check_expression(enclosing_class);
+	
+	//check if both are not Int
+	if(type1!=Int || type2!=Int)
+		classtable->semant_error(enclosing_class)<<"non-Int arguments: "<<type1<<" <= "<<type2<<endl;
+	
+	return Bool;
+}
+
 Symbol comp_class::check_expression(Class_ enclosing_class) {
 	
 	Symbol type=e1->check_expression(enclosing_class);
