@@ -399,6 +399,17 @@ Symbol Expression_class::check_expression(Class_)	{
 	return No_type;
 }
 
+Symbol neg_class::check_expression(Class_ enclosing_class) {
+	
+	Symbol type1=e1->check_expression(enclosing_class);
+	
+	//check if type is Int
+	if(type1!=Int)
+		classtable->semant_error(enclosing_class)<<"Argument of '~' has type "<<type1<<" instead of Int."<<endl;
+	
+	return Int;
+}
+
 Symbol lt_class::check_expression(Class_ enclosing_class)	{
 	
 	Symbol type1=e1->check_expression(enclosing_class);
