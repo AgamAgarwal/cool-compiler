@@ -97,7 +97,7 @@ public:
    virtual Expression copy_Expression() = 0;
 
 	//function to check expression, set and return its type
-	virtual Symbol check_expression(Class_);
+	virtual Symbol check_expression(Class_) = 0;
 	
 #ifdef Expression_EXTRAS
    Expression_EXTRAS

@@ -456,10 +456,6 @@ method_class* find_method(Symbol class_name, Symbol method_name) {
 
 /* Expression functions */
 
-//TODO: remove this function when done all
-Symbol Expression_class::check_expression(Class_)	{
-	return No_type;
-}
 
 Symbol assign_class::check_expression(Class_ enclosing_class) {
 	
