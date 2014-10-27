@@ -368,8 +368,11 @@ void attr_class::add_feature(Class_ enclosing_class) {
 	if(classtable->object_table->probe(name)!=NULL)
 		classtable->semant_error(enclosing_class)<<"Attribute "<<name<<" is multiply defined in class."<<endl;
 	
+	//check if self
+	if(name==self)
+		classtable->semant_error(enclosing_class)<<"'self' cannot be the name of an attribute."<<endl;
 	//check if inherited attribute
-	if(find_attr(enclosing_class->get_parent(), name)!=NULL)
+	else if(find_attr(enclosing_class->get_parent(), name)!=NULL)
 		classtable->semant_error(enclosing_class)<<"Attribute "<<name<<" is an attribute of an inherited class."<<endl;
 	else
 		classtable->object_table->addid(name, &type_decl);
