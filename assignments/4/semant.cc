@@ -99,12 +99,14 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
 			Main_class_not_defined_error=false;
 		
 		//check if redefinition
-		if(class_map.find(cur_class->get_name())!=class_map.end()) {
-			semant_error(cur_class)<<"Class "<<(cur_class->get_name())<<" was previously defined."<<endl;
+		if(cur_class->get_name()==SELF_TYPE || class_map.find(cur_class->get_name())!=class_map.end()) {
+			if(cur_class->get_name()==IO || cur_class->get_name()==Int || cur_class->get_name()==Str || cur_class->get_name()==Bool || cur_class->get_name()==Object || cur_class->get_name()==SELF_TYPE)
+				semant_error(cur_class)<<"Redefinition of basic class "<<cur_class->get_name()<<"."<<endl;
+			else
+				semant_error(cur_class)<<"Class "<<(cur_class->get_name())<<" was previously defined."<<endl;
 			class_redefinition_error=true;
-		}
-		
-		class_map.insert(std::pair<Symbol, Class_>(cur_class->get_name(), cur_class));
+		} else
+			class_map.insert(std::pair<Symbol, Class_>(cur_class->get_name(), cur_class));
 	}
 	
 	if(!check_if_valid_parents() && !class_redefinition_error)
@@ -269,7 +271,6 @@ void ClassTable::install_basic_classes() {
 	class_map.insert(std::pair<Symbol, Class_>(Bool, Bool_class));
 	class_map.insert(std::pair<Symbol, Class_>(Str, Str_class));
 }
-
 
 void ClassTable::check_features() {
 	
