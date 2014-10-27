@@ -366,6 +366,11 @@ void formal_class::check_and_add_formal(Class_ enclosing_class) {
 
 void method_class::check_feature(Class_ enclosing_class) {
 	classtable->object_table->enterscope();	//entering a new method
+	
+	//check if main in Main with formals
+	if(enclosing_class->get_name()==Main && name==main_meth && formals->len()!=0)
+		classtable->semant_error(enclosing_class)<<"'main' method in class Main should have no arguments."<<endl;
+	
 	check_and_add_formals(enclosing_class);
 	
 	Symbol type_expr=expr->check_expression(enclosing_class);
