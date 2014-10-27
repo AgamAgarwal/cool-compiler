@@ -317,7 +317,22 @@ void method_class::add_feature(Class_ enclosing_class) {
 	if(classtable->method_table->probe(name)!=NULL)
 		classtable->semant_error(enclosing_class)<<"Method "<<name<<" is multiply defined."<<endl;
 	
-	//TODO: check overridden functions
+	method_class* method_ancestor=find_method(enclosing_class->get_parent(), name);
+	if(method_ancestor!=NULL) {
+		
+		//check number of formal parameters
+		if(formals->len()!=method_ancestor->formals->len())
+			classtable->semant_error(enclosing_class)<<"Incompatible number of formal parameters in redefined method "<<name<<"."<<endl;
+		else {
+			//check formal types
+			for(int i=0; i<formals->len(); i++) {
+				if(formals->nth(i)->get_type_decl()!=method_ancestor->formals->nth(i)->get_type_decl()) {
+					classtable->semant_error(enclosing_class)<<"In redefined method "<<name<<", parameter type "<<formals->nth(i)->get_type_decl()<<" is different from original type "<<method_ancestor->formals->nth(i)->get_type_decl()<<endl;
+					break;
+				}
+			}
+		}
+	}
 	
 	classtable->method_table->addid(name, &return_type);
 	
