@@ -395,6 +395,12 @@ bool type_conforms(Symbol child, Symbol parent) {
 
 /* find common ancestor */
 Symbol find_common_ancestor(Symbol type1, Symbol type2) {
+	
+	if(type1==No_type)
+		return type2;
+	if(type2==No_type)
+		return type1;
+	
 	int count1, count2;
 	count1=count2=0;
 	Symbol temp;
@@ -588,6 +594,57 @@ Symbol loop_class::check_expression(Class_ enclosing_class) {
 	
 	//type is always Object
 	set_type(Object);
+	return get_type();
+}
+
+Symbol typcase_class::check_expression(Class_ enclosing_class) {
+	
+	//check expression
+	Symbol type_expr=expr->check_expression(enclosing_class);
+	
+	Symbol return_type=No_type;
+	
+	std::map<Symbol, bool> types_done;
+	
+	//check each case
+	for(int i=cases->first(); cases->more(i); i=cases->next(i)) {
+		
+		Case cur_case=cases->nth(i);
+		Symbol  cur_case_name=cur_case->get_name();
+		Symbol cur_case_type_decl=cur_case->get_type_decl();
+		
+		
+		//enterscope
+		classtable->object_table->enterscope();
+		
+		//check if 'self'
+		if(cur_case_name==self)
+			classtable->semant_error(enclosing_class)<<"'self' bound in 'case'."<<endl;
+		
+		//check if type redefined
+		if(types_done.find(cur_case_type_decl)!=types_done.end())
+			classtable->semant_error(enclosing_class)<<"Duplicate branch "<<cur_case_type_decl<<" in case statement."<<endl;
+		else
+			types_done[cur_case_type_decl]=true;	//put into the map
+		
+		//check if valid type
+		if(classtable->class_map.find(cur_case_type_decl)==classtable->class_map.end())
+			classtable->semant_error(enclosing_class)<<"Class "<<cur_case_type_decl<<" of case branch is undefined."<<endl;
+		
+		classtable->object_table->addid(cur_case_name, &cur_case_type_decl);
+		
+		//check expression
+		Symbol type_branch=cur_case->get_expr()->check_expression(enclosing_class);
+		
+		//set return type as the common ancestor
+		return_type=find_common_ancestor(return_type, type_branch);
+		
+		//exitscope
+		classtable->object_table->exitscope();
+		
+	}
+	
+	set_type(return_type);
 	return get_type();
 }
 
