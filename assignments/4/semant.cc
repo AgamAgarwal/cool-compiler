@@ -875,16 +875,25 @@ Symbol no_expr_class::check_expression(Class_ enclosing_class) {
 Symbol object_class::check_expression(Class_ enclosing_class) {
 	
 	//check in current scope
-	Symbol *type;
+	Symbol *type_obj;
+	
+	//find in ancestors
+	attr_class* attr=find_attr(enclosing_class->get_parent(), name);
+	Symbol inherited_attr_type;
+	
+	//if ancestors had this attr
+	if(attr!=NULL)
+		inherited_attr_type=attr->get_type_decl();
 	
 	//TODO: remove this Kludge
 	if(name==self)
 		set_type(enclosing_class->get_name());
-	else if((type=classtable->object_table->lookup(name))==NULL) {
+	else if((type_obj=classtable->object_table->lookup(name))==NULL
+			&& (attr==NULL || (type_obj=&inherited_attr_type)==NULL)) {
 		classtable->semant_error(enclosing_class)<<"Undeclared identifier "<<name<<"."<<endl;
 		set_type(Object);
 	} else
-		set_type(*type);
+		set_type(*type_obj);
 	
 	return get_type();
 }
