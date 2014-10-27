@@ -855,8 +855,8 @@ Symbol string_const_class::check_expression(Class_ enclosing_class) {
 
 Symbol new__class::check_expression(Class_ enclosing_class) {
 	
-	//check if type exists
-	if(classtable->class_map.find(type_name)==classtable->class_map.end()) {
+	//check if type is SELF_TYPE or does not exist
+	if(type_name!=SELF_TYPE && classtable->class_map.find(type_name)==classtable->class_map.end()) {
 		classtable->semant_error(enclosing_class)<<"'new' used with undefined class "<<type_name<<"."<<endl;
 		set_type(Object);
 	} else
