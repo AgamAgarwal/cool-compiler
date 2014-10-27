@@ -507,9 +507,13 @@ Symbol assign_class::check_expression(Class_ enclosing_class) {
 	//check expression
 	Symbol type_expr=expr->check_expression(enclosing_class);
 	
+	//check if assigning to self
+	if(name==self)
+		classtable->semant_error(enclosing_class)<<"Cannot assign to 'self'."<<endl;
+	
 	//check if OBJECTID is declared in this or ancestor scopes
-	Symbol *type_object;
-	if((type_object=classtable->object_table->lookup(name))==NULL)
+	Symbol *type_object=classtable->object_table->lookup(name);
+	if(name!=self && type_object==NULL)
 		classtable->semant_error(enclosing_class)<<"Assignment to undeclared variable "<<name<<"."<<endl;
 	
 	//check if type conforms
@@ -565,7 +569,7 @@ Symbol static_dispatch_class::check_expression(Class_ enclosing_class) {
 						classtable->semant_error(enclosing_class)<<"In call of method "<<name<<", type "<<actual->nth(i)->get_type()<<" of parameter "<<formals->nth(i)->get_name()<<" does not conform to declared type "<<formals->nth(i)->get_type_decl()<<"."<<endl;
 			}
 			
-			set_type(method->get_return_type()!=SELF_TYPE?method->get_return_type():type_expr);
+			set_type(method->get_return_type());
 		}
 	}
 	
@@ -610,7 +614,7 @@ Symbol dispatch_class::check_expression(Class_ enclosing_class) {
 					classtable->semant_error(enclosing_class)<<"In call of method "<<name<<", type "<<actual->nth(i)->get_type()<<" of parameter "<<formals->nth(i)->get_name()<<" does not conform to declared type "<<formals->nth(i)->get_type_decl()<<"."<<endl;
 		}
 		
-		set_type(method->get_return_type()!=SELF_TYPE?method->get_return_type():type_name);
+		set_type(method->get_return_type());
 	}
 	return get_type();
 }
