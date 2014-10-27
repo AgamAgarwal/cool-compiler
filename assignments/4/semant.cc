@@ -651,7 +651,7 @@ Symbol cond_class::check_expression(Class_ enclosing_class) {
 	Symbol type_then=then_exp->check_expression(enclosing_class);
 	Symbol type_else=else_exp->check_expression(enclosing_class);
 	
-	set_type(find_common_ancestor(type_then, type_else));
+	set_type(find_common_ancestor(type_then!=SELF_TYPE?type_then:enclosing_class->get_name(), type_else!=SELF_TYPE?type_else:enclosing_class->get_name()));
 	return get_type();
 }
 
@@ -709,7 +709,7 @@ Symbol typcase_class::check_expression(Class_ enclosing_class) {
 		Symbol type_branch=cur_case->get_expr()->check_expression(enclosing_class);
 		
 		//set return type as the common ancestor
-		return_type=find_common_ancestor(return_type, type_branch);
+		return_type=find_common_ancestor(return_type, type_branch!=SELF_TYPE?type_branch:enclosing_class->get_name());
 		
 		//exitscope
 		classtable->object_table->exitscope();
