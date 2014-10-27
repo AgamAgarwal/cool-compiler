@@ -31,6 +31,7 @@ public:
   std::map<Symbol, Class_> class_map;
   SymbolTable<Symbol, Symbol> *object_table;
   SymbolTable<Symbol, Symbol> *method_table;
+  bool inheritance_cycles;
   
   ClassTable(Classes);
   bool check_if_valid_parents();

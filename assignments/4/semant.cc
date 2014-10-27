@@ -110,7 +110,7 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
 	}
 	
 	if(!check_if_valid_parents() && !class_redefinition_error)
-		if(!check_inheritance_cycles())
+		if(!(inheritance_cycles=check_inheritance_cycles()))
 			if(Main_class_not_defined_error) {
 				semant_error()<<"Class Main is not defined."<<endl;
 			}
@@ -1010,7 +1010,8 @@ void program_class::semant()
     classtable = new ClassTable(classes);
 
     /* some semantic analysis code may go here */
-	classtable->check_features();
+	if(!classtable->inheritance_cycles)
+		classtable->check_features();
 
 
     if (classtable->errors()) {
