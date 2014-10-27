@@ -591,7 +591,7 @@ Symbol dispatch_class::check_expression(Class_ enclosing_class) {
 			Formals formals=method->get_formals();
 			
 			for(int i=0; i<actual->len(); i++)
-				if(!type_conforms(actual->nth(i)->get_type(), formals->nth(i)->get_type_decl()))
+				if(!type_conforms(actual->nth(i)->get_type()!=SELF_TYPE?actual->nth(i)->get_type():enclosing_class->get_name(), formals->nth(i)->get_type_decl()))
 					classtable->semant_error(enclosing_class)<<"In call of method "<<name<<", type "<<actual->nth(i)->get_type()<<" of parameter "<<formals->nth(i)->get_name()<<" does not conform to declared type "<<formals->nth(i)->get_type_decl()<<"."<<endl;
 		}
 		
