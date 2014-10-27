@@ -720,8 +720,8 @@ Symbol let_class::check_expression(Class_ enclosing_class) {
 	Symbol type_init=init->check_expression(enclosing_class);
 	
 	
-	//check if type_decl exists
-	if(classtable->class_map.find(type_decl)==classtable->class_map.end())
+	//check if type_decl is not SELF_TYPE and doesn't exists
+	if(type_decl!=SELF_TYPE && classtable->class_map.find(type_decl)==classtable->class_map.end())
 		classtable->semant_error(enclosing_class)<<"Class "<<type_decl<<" of let-bound identifier "<<identifier<<" is undefined."<<endl;
 	
 	//check if type_init conforms with declared type
@@ -733,7 +733,11 @@ Symbol let_class::check_expression(Class_ enclosing_class) {
 	//enter a new scope
 	classtable->object_table->enterscope();
 	
-	classtable->object_table->addid(identifier, &type_decl);
+	//check if 'self'
+	if(identifier==self)
+		classtable->semant_error(enclosing_class)<<"'self' cannot be bound in a 'let' expression."<<endl;
+	else
+		classtable->object_table->addid(identifier, &type_decl);
 	
 	set_type(body->check_expression(enclosing_class));
 	
