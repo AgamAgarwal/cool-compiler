@@ -399,7 +399,7 @@ void attr_class::check_feature(Class_ enclosing_class) {
 	Symbol expr_type=init->check_expression(enclosing_class);
 	
 	//check type if not No_type
-	if(expr_type!=No_type && !type_conforms(expr_type, type_decl))
+	if(expr_type!=No_type && !type_conforms(expr_type!=SELF_TYPE?expr_type:enclosing_class->get_name(), type_decl))
 		classtable->semant_error(enclosing_class)<<"Inferred type "<<expr_type<<" of initialization of attribute "<<name<<" does not conform to declared type "<<type_decl<<"."<<endl;
 }
 
@@ -517,7 +517,7 @@ Symbol assign_class::check_expression(Class_ enclosing_class) {
 		classtable->semant_error(enclosing_class)<<"Assignment to undeclared variable "<<name<<"."<<endl;
 	
 	//check if type conforms
-	if(type_object!=NULL && !type_conforms(type_expr, *type_object))
+	if(type_object!=NULL && !type_conforms(type_expr!=SELF_TYPE?type_expr:enclosing_class->get_name(), *type_object))
 		classtable->semant_error(enclosing_class)<<"Type "<<type_expr<<" of assigned expression does not conform to declared type "<<*type_object<<" of identifier "<<name<<"."<<endl;
 	
 	set_type(type_expr);
@@ -569,7 +569,7 @@ Symbol static_dispatch_class::check_expression(Class_ enclosing_class) {
 						classtable->semant_error(enclosing_class)<<"In call of method "<<name<<", type "<<actual->nth(i)->get_type()<<" of parameter "<<formals->nth(i)->get_name()<<" does not conform to declared type "<<formals->nth(i)->get_type_decl()<<"."<<endl;
 			}
 			
-			set_type(method->get_return_type());
+			set_type(method->get_return_type()!=SELF_TYPE?method->get_return_type():type_expr);
 		}
 	}
 	
@@ -614,7 +614,7 @@ Symbol dispatch_class::check_expression(Class_ enclosing_class) {
 					classtable->semant_error(enclosing_class)<<"In call of method "<<name<<", type "<<actual->nth(i)->get_type()<<" of parameter "<<formals->nth(i)->get_name()<<" does not conform to declared type "<<formals->nth(i)->get_type_decl()<<"."<<endl;
 		}
 		
-		set_type(method->get_return_type());
+		set_type(method->get_return_type()!=SELF_TYPE?method->get_return_type():type_name);
 	}
 	return get_type();
 }
