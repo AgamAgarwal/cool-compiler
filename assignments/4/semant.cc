@@ -509,6 +509,9 @@ Symbol static_dispatch_class::check_expression(Class_ enclosing_class) {
 	
 	Symbol type_expr=expr->check_expression(enclosing_class);
 	
+	if(type_expr==SELF_TYPE)
+		type_expr=enclosing_class->get_name();
+	
 	set_type(Object);	//default
 	
 	//check each of the actuals and set their types
