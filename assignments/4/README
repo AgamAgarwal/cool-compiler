@@ -149,3 +149,255 @@ Instructions
 
         GOOD LUCK!
 
+Writeup
+================
+
+
+Checking if every class has a valid parent
+----------------------------------------
+This checking is done by iterating over the hashmap and checking if the 
+parent of that class is existing or not. 
+Further, since COOL does not allow inheritence from the basic classes
+Int, String and Bool, we check the parent of every defined class in 
+Classes(the class list passed to the constructor of ClassTable defined
+in semant.cc). 
+Also, redefinition of classes is not allowed in COOL. We check this 
+while adding the classes to the map.
+
+Checking cycles in inheritence graph.
+-------------------------------------
+Inheritence graph is implemented using a hashmap of <Symbol, Class_>.
+Where each Symbol is the name of a Class defined in the program and
+mapped to the Class_ object for the same class.
+
+Since only single inheritence is allowed in COOL, if we start from one
+class and check its parent and so on, the problem reduces to just 
+checking for cycles in a linked list. This new problem can be solved by 
+using the standard fast pointer-slow pointer algorithm for linked lists.
+
+Check features for every class
+----------------------------
+Iterate over each class
+Skip basic classes (we know they are well defined)
+	For each class, get the features list
+	Iterate over the feature list
+		For each feature, call add_feature() with the current class
+		passed as argument (For error printing purposes.). It does some
+		basic semantic checking like if the declared type of features
+		(both methods and attributes) are existing or not and redefinition
+		of features (which is not allowed in COOL)
+		Then 
+
+Check formals of every feature of type <method>
+----------------------------------------------
+Whenever you find a <method_definition> feature in the class features,
+enter a new scope iterate over the formals of the method and call
+check_and_add_formal() which checks the formals for valid return types, 
+redifinitions and adds them to the object_table in the current scope.
+
+Check the optional initialisation of <attribute> type feature in class
+---------------------------------------------------------------------
+For the grammar rule , feature -> ID:TYPE[<-expr], check if the type of
+initialisation expr conforms to the declared type of ID.
+
+The type_conforms() method for type checking
+---------------------------------------------
+It takes two Symbols (types actually) named as child and parent
+as arguments and  checks if the child type conforms to the parent type,
+meaning  that it goes through the ancestral hierarchy of the child type
+and check if parent comes in it or not. If yes, it returns true else false.
+
+
+Checking return type of <method> feature same as the expr within
+----------------------------------------------------------------
+Check if the returned type of body exists or not. If it exists,check if the
+method's declared return type conforms to the returned type of the body.
+If not, call semant_error() with appropriate error message
+ and exit. 
+
+Type checking for expressions and scoping
+-----------------------------------------
+Added a virtual function named (Symbol return_type) check_expression()
+to the Expression class and defined them separately and accordingly in
+each type of expression in the COOL grammar - 
+
+* Int, String, Bool, No_Type - set the type as the corresponding type
+and return it.
+
+* ObjectID - Check if the object is declared in the current scope's
+ancestral hierarchy (i.e. use symboltable's lookahead() function). If
+no, throw error, else set the type of expr as that of objectID's type.
+
+* not expr - check if type of expr is bool or not. If not throw error,
+else set tthe type of parent expr (the one for which this method
+is called. ) as Bool and return it.
+
+* Comparison operators (= , <, <=) -  For< and LE, check if type of both
+operands is Int or not. If not, call semant_error(),set Bool as the
+type of this node and return Bool.
+	
+	For equality, just call check_expression() on both the operands and
+	if any of them is of basic type (Int,String,Bool) check that the
+	other is also the same.If not, call semant_error() with appropriate
+	error message, set the type of this node as Bool and return Bool.
+
+* ~expr  - it checks if the expr whose negation is to be taken is of 
+type Int or not. If not, calls semant_error() with appropriate
+error message. Then, set the type of this node as Int and returns Int.
+
+*Binary operators (+,-,*,/)- Checks if both operands are of type Int
+or not. If not call semant_error(). Then set Int as type of this node 
+and return it.(this is most probably done so that the type mismatch does
+not propagate futher up the tree. ) 
+
+* isvoid expr - calls check_expression() on the expr, set the type of
+this node as Bool and return it.
+
+* new TYPE - check if the TYPE is declared in the Class map. If yes, set
+the type of this node as the Symbol TYPE else set type as Object. Then 
+return the type of this node.
+
+* a<- expr - calls check_expression() on th expr assigned to A. 
+		Then checks if ObjectID A is declared in the scope hierarchy.
+		Then checks if the type of expr is same as the declared type of 
+		ObjectID A.l
+		
+* if expr then expr else expr fi - checks if predicate is of type Bool 
+or not. If not, call semant_error().
+Then it calls check_expression() on then expr and else expr.
+Then check if then expression and else expression have the same type.
+This is done by declaring a new function in semant.h as -
+Symbol find_common_ancestor(Symbol,Symbol);
+This takes the two types as arguments and returns the last common 
+ancestor of them. By default any two types have Object Type as common
+ancestor. So, it returns Object Symbol in default case.
+Otherwise it returns the common ancestor type Symbol.
+
+* while expr loop expr pool - calls check_expression() on predicate and
+checks if the returned type is Bool.
+calls check_expression() on the expr within the loop.
+Returns the type Object always as the result type of <while-expression>
+
+* [[expr;]] - iterates over the list of Expressions and calls
+check_expression() on each expression and returns the type obtained from
+the last expression in the block as the type of the block. For this,
+define a new Symbol type_expr and set this to the type returned from the 
+check_expression() for each expression in the block.
+Then after the loop, set the type of the block as this type_expr and 
+return this.
+
+* let a:TYPE[<-expr] in expr - get the type of initialisation expr.
+check if the declared type of 'a' exists or not. If not call semant_error()
+. Then check if the declared type conforms to the init type. If no, call
+semant_error().
+Then enter  a new scope in the object table, insert a:TYPE into it and 
+exit the scope. Set the return type of <let-expression> to the type of 
+body expr and return that type.
+
+Checking dispatch and static dispatch
+-------------------------------------
+There are two types of dispatch - dispatch to the current class and 
+static dispatch. 
+To solve this we define the method check_expression() in both dispatch
+ans static dispatch classes in cool-tree.h and another method named 
+find_method() in class Classtable in semant.h.
+
+find_method()
+-------------
+It takes two parameters - a class_name and a method_name (both of type
+Symbol ) It iterates over the classes in class_map by first extracting
+the Class_ object from the given class name, then the feature list of
+current class. Then it iterates over the feature list and finds a method
+with the given method_name. If found, it return a pointer to the object
+of that method (*method_class).
+Then it sets the current_class name to the parent of current class.
+If no such method is found after going through the whole parent tree, it
+return NULL.
+This method is invoked by check_expression() in dispatch and static_dipatch.
+
+dispatch::check_expression()
+-----------------------------
+First it checks and gets the type of the expr on which the method is called.
+Then  it checks each of the actuals and sets their types.(So that their
+errors are reported.) Then it checks if the type_expr is valid or not.
+Then it checks if the method is defined in any of the classes in the 
+inheritence tree of the class named type_expr. 
+
+If it passes all these conditions,we get a pointer to that method object.
+Here we set the return type of dispatch to the return type in the method
+definition.
+Then it compares the number of formals in the method declaration and the 
+number of actuals passed. If they are equal, then it checks if each of
+the corresponding formal's and actual's type conform or not.
+At any of these checks, if not passed, we call semant_error() with an
+appropriate message.
+
+static_dispatch::check_expression()
+-----------------------------
+First it checks and gets the type of the expr on which the method is called.
+Then  it checks each of the actuals and sets their types.(So that their
+errors are reported.)Then it checks if the static dispatch type(type_name)
+exists  or not. If it does, then it checks if type_expr and type_name
+conform or not. If they do, rest all is same as dispatch. Only difference
+being that when finding that the method is declared in the iheritence tree
+of the class, in static_dispatch, we pass type_name as the starting class
+name instead of type_expr.
+
+Case expression
+-----------------
+First we check the expr of case statement for semantic errors (call 
+check_expression). Then iterating over the branches, we enter a new 
+scope and insert the declared identifier (after the necessary checking)
+into the object table then we check the expression given in that branch.
+For checking the duplicate types, we create a new hashmap of <Symbol, Bool>
+With each branch, we mark the type as true in the map. If it comes again,
+we throw an eror.
+
+Return type of case expression
+-------------------------------
+The return type is nothing but the common ancestor of the expr in  all 
+the branches. This type is found in a similar way as if then else.
+
+using inherited attributes
+---------------------------
+Just like methods, attributes can also be inherited and used. So we did
+similar checking when defining attributes in class.
+
+SELF_TYPE
+-------------
+SELF_TYPE in COOL represents the type of the Enclosing Class.
+
+	1.  When a method's return type is SELF_TYPE, it is set as SELF_TYPE
+	only to be handled in the outer expression.
+	2. If the type of an expression is SELF_TYPE, it is left as it is 
+	again to be handled outside.
+	3. If an object of the type SELF_TYPE is passed as an actual to a 
+	method, its type is converted into the enclosing Classes type before
+	passing.
+	4. In assignment expressions, the conformity is checked between the 
+	declared type and the enclosing class type incase of SELF_TYPE (if 
+	type of expr turns out to be SELF_TYPE)
+	5. if dispatched to SELF_TYPE, we dispatch to the type of 
+	enclosing class.
+	6. return type of dispatch as SELF_TYPE - in this case, if the return
+	type of a method in dispatch is SELF_TYPE, we have 2 possibilities
+	for the type of expr on which dispatch is called -
+		a. SELF_TYPE - then we set SELF_TYPE as the return type of dispatch
+		expression.
+		b. some other type - then we return the type of the class on which 
+		dispatch was called as the return type of method
+
+self Object
+------------
+self Object is predefined in COOL. It can not be redefined, initialised
+or  be the name of a formal parameter of a method.
+
+Test Cases
+================
+
+Both good.cl and bad.cl are written so that they handle all of the non-
+trivial cases such as cycles in inheritence graph, comparison between
+non-int type objects, non-conforming return type in method definition,
+binary arithmatic operations on non-int objects, equality expression
+between basic type objects, invalid number and type of actuals in 
+dispatch and so on.
