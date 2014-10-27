@@ -522,8 +522,20 @@ Symbol assign_class::check_expression(Class_ enclosing_class) {
 	
 	//check if OBJECTID is declared in this or ancestor scopes
 	Symbol *type_object=classtable->object_table->lookup(name);
-	if(name!=self && type_object==NULL)
-		classtable->semant_error(enclosing_class)<<"Assignment to undeclared variable "<<name<<"."<<endl;
+	attr_class* attr;
+	Symbol ancestor_type;
+	
+	if(name!=self && type_object==NULL) {
+		
+		//check in ancestor classes
+		attr=find_attr(enclosing_class->get_parent(), name);
+		if(attr!=NULL) {
+			ancestor_type=attr->get_type_decl();
+			type_object=&ancestor_type;
+		}
+		else
+			classtable->semant_error(enclosing_class)<<"Assignment to undeclared variable "<<name<<"."<<endl;
+	}
 	
 	//check if type conforms
 	if(type_object!=NULL && !type_conforms(type_expr!=SELF_TYPE?type_expr:enclosing_class->get_name(), *type_object))
@@ -549,7 +561,7 @@ Symbol static_dispatch_class::check_expression(Class_ enclosing_class) {
 	
 	//check if expr type conforms to static dispatch type
 	else if((type_expr==SELF_TYPE || classtable->class_map.find(type_expr)!=classtable->class_map.end())	//type_expr is defined
-		&& !type_conforms(type_expr==SELF_TYPE?enclosing_type->get_name()?type_expr, type_name))
+		&& !type_conforms(type_expr==SELF_TYPE?enclosing_class->get_name():type_expr, type_name))
 		classtable->semant_error(enclosing_class)<<"Expression type "<<type_expr<<" does not conform to declared static dispatch type "<<type_name<<"."<<endl;
 	
 	else {
@@ -926,7 +938,6 @@ Symbol object_class::check_expression(Class_ enclosing_class) {
 	if(attr!=NULL)
 		inherited_attr_type=attr->get_type_decl();
 	
-	//TODO: remove this Kludge
 	if(name==self)
 		set_type(SELF_TYPE);
 	else if((type_obj=classtable->object_table->lookup(name))==NULL
