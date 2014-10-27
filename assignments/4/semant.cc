@@ -537,9 +537,6 @@ Symbol static_dispatch_class::check_expression(Class_ enclosing_class) {
 	
 	Symbol type_expr=expr->check_expression(enclosing_class);
 	
-	if(type_expr==SELF_TYPE)
-		type_expr=enclosing_class->get_name();
-	
 	set_type(Object);	//default
 	
 	//check each of the actuals and set their types
@@ -551,8 +548,8 @@ Symbol static_dispatch_class::check_expression(Class_ enclosing_class) {
 		classtable->semant_error(enclosing_class)<<"Static dispatch to undefined class "<<type_name<<"."<<endl;
 	
 	//check if expr type conforms to static dispatch type
-	else if(classtable->class_map.find(type_expr)!=classtable->class_map.end()	//type_expr is defined
-		&& !type_conforms(type_expr, type_name))
+	else if((type_expr==SELF_TYPE || classtable->class_map.find(type_expr)!=classtable->class_map.end())	//type_expr is defined
+		&& !type_conforms(type_expr==SELF_TYPE?enclosing_type->get_name()?type_expr, type_name))
 		classtable->semant_error(enclosing_class)<<"Expression type "<<type_expr<<" does not conform to declared static dispatch type "<<type_name<<"."<<endl;
 	
 	else {
@@ -578,7 +575,11 @@ Symbol static_dispatch_class::check_expression(Class_ enclosing_class) {
 						classtable->semant_error(enclosing_class)<<"In call of method "<<name<<", type "<<actual->nth(i)->get_type()<<" of parameter "<<formals->nth(i)->get_name()<<" does not conform to declared type "<<formals->nth(i)->get_type_decl()<<"."<<endl;
 			}
 			
-			set_type(method->get_return_type()!=SELF_TYPE?method->get_return_type():type_expr);
+			set_type(method->get_return_type()!=SELF_TYPE?method->get_return_type():
+				(
+				type_name==SELF_TYPE?SELF_TYPE:type_name
+				)
+			);
 		}
 	}
 	
@@ -589,9 +590,6 @@ Symbol dispatch_class::check_expression(Class_ enclosing_class) {
 	
 	Symbol type_name=expr->check_expression(enclosing_class);
 	
-	if(type_name==SELF_TYPE)
-		type_name=enclosing_class->get_name();
-	
 	set_type(Object);	//default
 	method_class* method=NULL;
 	
@@ -600,11 +598,11 @@ Symbol dispatch_class::check_expression(Class_ enclosing_class) {
 		actual->nth(i)->check_expression(enclosing_class);
 	
 	//check if type_name is valid
-	if(classtable->class_map.find(type_name)==classtable->class_map.end())
+	if(type_name!=SELF_TYPE && classtable->class_map.find(type_name)==classtable->class_map.end())
 		classtable->semant_error(enclosing_class)<<"Dispatch on undefined class "<<type_name<<"."<<endl;
 	
 	//find the method in the ancestor list of type_name
-	else if((method=find_method(type_name, name))==NULL)
+	else if((method=find_method(type_name==SELF_TYPE?enclosing_class->get_name():type_name, name))==NULL)
 			classtable->semant_error(enclosing_class)<<"Dispatch to undefined method "<<name<<"."<<endl;
 	
 	
@@ -623,7 +621,11 @@ Symbol dispatch_class::check_expression(Class_ enclosing_class) {
 					classtable->semant_error(enclosing_class)<<"In call of method "<<name<<", type "<<actual->nth(i)->get_type()<<" of parameter "<<formals->nth(i)->get_name()<<" does not conform to declared type "<<formals->nth(i)->get_type_decl()<<"."<<endl;
 		}
 		
-		set_type(method->get_return_type()!=SELF_TYPE?method->get_return_type():type_name);
+		set_type(method->get_return_type()!=SELF_TYPE?method->get_return_type():
+				(
+				type_name==SELF_TYPE?SELF_TYPE:type_name
+				)
+			);
 	}
 	return get_type();
 }
