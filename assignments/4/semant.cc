@@ -459,6 +459,10 @@ method_class* find_method(Symbol class_name, Symbol method_name) {
 	
 	while(class_name!=No_class) {
 		
+		//check if class_name exists
+		if(classtable->class_map.find(class_name)==classtable->class_map.end())
+			break;
+		
 		//get the Class_ object
 		Class_ cur_class=classtable->class_map[class_name];
 		
