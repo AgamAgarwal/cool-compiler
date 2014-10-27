@@ -556,9 +556,10 @@ Symbol static_dispatch_class::check_expression(Class_ enclosing_class) {
 
 Symbol dispatch_class::check_expression(Class_ enclosing_class) {
 	
-	//TODO: check for 'self'
-	
 	Symbol type_name=expr->check_expression(enclosing_class);
+	
+	if(type_name==SELF_TYPE)
+		type_name=enclosing_class->get_name();
 	
 	set_type(Object);	//default
 	method_class* method=NULL;
@@ -890,7 +891,7 @@ Symbol object_class::check_expression(Class_ enclosing_class) {
 	
 	//TODO: remove this Kludge
 	if(name==self)
-		set_type(enclosing_class->get_name());
+		set_type(SELF_TYPE);
 	else if((type_obj=classtable->object_table->lookup(name))==NULL
 			&& (attr==NULL || (type_obj=&inherited_attr_type)==NULL)) {
 		classtable->semant_error(enclosing_class)<<"Undeclared identifier "<<name<<"."<<endl;
