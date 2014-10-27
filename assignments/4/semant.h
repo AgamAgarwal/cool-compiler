@@ -45,6 +45,7 @@ public:
 bool type_conforms(Symbol, Symbol);
 Symbol find_common_ancestor(Symbol, Symbol);
 method_class* find_method(Symbol, Symbol);
+attr_class* find_attr(Symbol, Symbol);
 ClassTable *classtable;
 
 #endif

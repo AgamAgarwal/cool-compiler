@@ -368,7 +368,11 @@ void attr_class::add_feature(Class_ enclosing_class) {
 	if(classtable->object_table->probe(name)!=NULL)
 		classtable->semant_error(enclosing_class)<<"Attribute "<<name<<" is multiply defined in class."<<endl;
 	
-	classtable->object_table->addid(name, &type_decl);
+	//check if inherited attribute
+	if(find_attr(enclosing_class->get_parent(), name)!=NULL)
+		classtable->semant_error(enclosing_class)<<"Attribute "<<name<<" is an attribute of an inherited class."<<endl;
+	else
+		classtable->object_table->addid(name, &type_decl);
 	
 }
 
@@ -452,6 +456,29 @@ method_class* find_method(Symbol class_name, Symbol method_name) {
 		class_name=cur_class->get_parent();
 	}
 	return NULL;
+}
+
+/* finds an attribute in the ancestor list */
+attr_class* find_attr(Symbol class_name, Symbol attr_name) {
+	
+	while(class_name!=No_class) {
+		
+		//get the Class_ object
+		Class_ cur_class=classtable->class_map[class_name];
+		
+		//get its features
+		Features features=cur_class->get_features();
+		
+		//iterate over features to find the attr
+		for(int i=features->first(); features->more(i); i=features->next(i)) {
+			Feature cur_feature=features->nth(i);
+			if(!cur_feature->is_method() && cur_feature->get_name()==attr_name)
+				return (attr_class*)cur_feature;
+		}
+		class_name=cur_class->get_parent();
+	}
+	return NULL;
+	
 }
 
 /* Expression functions */
