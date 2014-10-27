@@ -347,16 +347,20 @@ void method_class::check_and_add_formals(Class_ enclosing_class) {
 
 void formal_class::check_and_add_formal(Class_ enclosing_class) {
 	
-	//check if redefinition
-	if(classtable->object_table->probe(name)!=NULL)
-		classtable->semant_error(enclosing_class)<<"Formal parameter "<<name<<" is multiply defined."<<endl;
-	
 	//check if invalid type
 	if(classtable->class_map.find(type_decl)==classtable->class_map.end())
 		classtable->semant_error(enclosing_class)<<"Class "<<type_decl<<" of formal parameter "<<name<<" is undefined."<<endl;
+		
+	//check if 'self'
+	if(name==self)
+		classtable->semant_error(enclosing_class)<<"'self' cannot be the name of a formal parameter."<<endl;
+	//check if redefinition
+	else if(classtable->object_table->probe(name)!=NULL)
+		classtable->semant_error(enclosing_class)<<"Formal parameter "<<name<<" is multiply defined."<<endl;
 	
 	//add to object table
-	classtable->object_table->addid(name, &type_decl);
+	else
+		classtable->object_table->addid(name, &type_decl);
 	
 }
 
