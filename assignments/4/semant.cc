@@ -550,7 +550,7 @@ Symbol static_dispatch_class::check_expression(Class_ enclosing_class) {
 						classtable->semant_error(enclosing_class)<<"In call of method "<<name<<", type "<<actual->nth(i)->get_type()<<" of parameter "<<formals->nth(i)->get_name()<<" does not conform to declared type "<<formals->nth(i)->get_type_decl()<<"."<<endl;
 			}
 			
-			set_type(method->get_return_type());
+			set_type(method->get_return_type()!=SELF_TYPE?method->get_return_type():type_expr);
 		}
 	}
 	
@@ -595,7 +595,7 @@ Symbol dispatch_class::check_expression(Class_ enclosing_class) {
 					classtable->semant_error(enclosing_class)<<"In call of method "<<name<<", type "<<actual->nth(i)->get_type()<<" of parameter "<<formals->nth(i)->get_name()<<" does not conform to declared type "<<formals->nth(i)->get_type_decl()<<"."<<endl;
 		}
 		
-		set_type(method->get_return_type());
+		set_type(method->get_return_type()!=SELF_TYPE?method->get_return_type():type_name);
 	}
 	return get_type();
 }
