@@ -42,6 +42,10 @@ private:
    void install_classes(Classes cs);
    void build_inheritance_tree();
    void set_relations(CgenNodeP nd);
+   
+   void emit_class_declaration(CgenNode*);
+   void emit_class_name(Symbol);
+   void emit_type(Symbol);
 public:
    CgenClassTable(Classes, ostream& str);
    void code();

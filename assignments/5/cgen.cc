@@ -131,13 +131,13 @@ BoolConst truebool(TRUE);
 
 void program_class::cgen(ostream &os) 
 {
-  // spim wants comments to start with '#'
-  os << "# start of generated code\n";
+  // llvm wants comments to start with ';'
+  os << "; start of generated code\n";
 
   initialize_constants();
   CgenClassTable *codegen_classtable = new CgenClassTable(classes,os);
 
-  os << "\n# end of generated code\n";
+  os << "\n; end of generated code\n";
 }
 
 
@@ -815,10 +815,58 @@ void CgenNode::set_parentnd(CgenNodeP p)
   parentnd = p;
 }
 
+void CgenClassTable::emit_class_name(Symbol name) {
+	str<<"%class."<<name->get_string();
+}
 
+void CgenClassTable::emit_type(Symbol type) {
+	if(type==Int)
+		str<<"i32";
+	else if(type==Bool)
+		str<<"i8";
+	else
+		emit_class_name(type);
+}
+
+void CgenClassTable::emit_class_declaration(CgenNode *class_node) {
+	emit_class_name(class_node->get_name());
+	str<<" = type { ";
+	
+	if(class_node->get_name()==Object)
+		str<<"i8";
+	else {
+		//get parent name
+		emit_class_name(class_node->get_parentnd()->get_name());
+		for(int i=class_node->features->first();class_node->features->more(i); i=class_node->features->next(i)) {
+			Feature f=class_node->features->nth(i);
+			if(f->is_attr()) {
+				str<<", ";
+				emit_type(((attr_class*)f)->get_type_decl());
+			}
+		}
+	}
+	str<<" }\n";
+}
 
 void CgenClassTable::code()
 {
+  if(cgen_debug)	cout<<"coding llvm data"<<endl;
+  str<<"target datalayout = \"e-p:32:32:32-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:32:64-f32:32:32-f64:32:64-v64:64:64-v128:128:128-a0:0:64-f80:32:32-n8:16:32\"\ntarget triple = \"i386-pc-linux-gnu\"\n\n";
+  
+  
+  //TODO: iterate over classes and generate list
+  for(List<CgenNode> *l=nds; l!=NULL; l=l->tl()) {
+	  CgenNode *cur_node=l->hd();
+	  if(cur_node->get_name()!=Int && cur_node->get_name()!=Bool)
+		emit_class_declaration(cur_node);
+  }
+  
+  
+  //TODO: generate main function to call the Main.main() method
+  
+  
+  
+  /*
   if (cgen_debug) cout << "coding global data" << endl;
   code_global_data();
 
@@ -841,7 +889,7 @@ void CgenClassTable::code()
 //                   - object initializer
 //                   - the class methods
 //                   - etc...
-
+*/
 }
 
 

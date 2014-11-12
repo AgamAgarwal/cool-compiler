@@ -49,6 +49,8 @@ class Feature_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Feature(); }
    virtual Feature copy_Feature() = 0;
+   
+   virtual bool is_attr() = 0;
 
 #ifdef Feature_EXTRAS
    Feature_EXTRAS
@@ -187,6 +189,8 @@ public:
    }
    Feature copy_Feature();
    void dump(ostream& stream, int n);
+   
+   bool is_attr() { return false; }
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
@@ -211,6 +215,9 @@ public:
    }
    Feature copy_Feature();
    void dump(ostream& stream, int n);
+   
+   bool is_attr() { return true; }
+   Symbol get_type_decl() { return type_decl; }
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
