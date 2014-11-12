@@ -1,0 +1,4 @@
+#!/bin/bash
+clang -S -emit-llvm $1
+opt $(basename $1 .cpp).s -o $(basename $1 .cpp).bc
+
