@@ -49,6 +49,9 @@ private:
    void emit_type(Symbol);
    void emit_method_call(Symbol, Symbol);
    
+   void emit_method_definition(Symbol, method_class*);
+   void emit_methods_definitions(CgenNode*);
+   
    void emit_method_name(Symbol, Symbol);
    
    method_class* find_method(Symbol, Symbol);

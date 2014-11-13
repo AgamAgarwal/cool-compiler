@@ -890,6 +890,25 @@ void CgenClassTable::emit_main_method() {
 	str<<"}\n";
 }
 
+void CgenClassTable::emit_method_definition(Symbol class_name, method_class* method) {
+	str<<"\ndefine linkonce_odr void ";
+	emit_method_name(class_name, method->name);
+	str<<"(";
+	//TODO: print return+this+formals
+	str<<") align 2 {\n";
+	//TODO: print function contents
+	str<<"}\n";
+}
+
+void CgenClassTable::emit_methods_definitions(CgenNode *class_node) {
+	for(int i=class_node->features->first();class_node->features->more(i); i=class_node->features->next(i)) {
+		Feature f=class_node->features->nth(i);
+		if(f->is_method()) {
+			emit_method_definition(class_node->get_name(), (method_class*)f);
+		}
+	}
+}
+
 void CgenClassTable::code()
 {
   if(cgen_debug)	cout<<"coding llvm data"<<endl;
@@ -897,8 +916,7 @@ void CgenClassTable::code()
   
   for(List<CgenNode> *l=nds; l!=NULL; l=l->tl()) {
 	  CgenNode *cur_node=l->hd();
-	  //if(cur_node->get_name()!=Int && cur_node->get_name()!=Bool)
-		emit_class_declaration(cur_node);
+	  emit_class_declaration(cur_node);
   }
   
   //declara prim_slot class
@@ -908,6 +926,12 @@ void CgenClassTable::code()
   //generate main function to call the Main.main() method
   emit_main_method();
   
+  //generate all functions
+  for(List<CgenNode> *l=nds; l!=NULL; l=l->tl()) {
+	  CgenNode *cur_node=l->hd();
+	  if(!cur_node->basic())
+		emit_methods_definitions(cur_node);
+  }
   
   /*
   if (cgen_debug) cout << "coding global data" << endl;
