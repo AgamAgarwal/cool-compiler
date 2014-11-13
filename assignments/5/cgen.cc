@@ -815,6 +815,41 @@ void CgenNode::set_parentnd(CgenNodeP p)
   parentnd = p;
 }
 
+/* finds a method in the ancestor list */
+method_class* CgenClassTable::find_method(Symbol class_name, Symbol method_name) {
+	
+	for(List<CgenNode> *l=nds; l!=NULL; l=l->tl()) {
+	  CgenNode *cur_node=l->hd();
+	  if(cur_node->get_name()==class_name) {
+		  while(true) {
+			  for(int i=cur_node->features->first(); cur_node->features->more(i); i=cur_node->features->next(i)) {
+				  Feature cur_feature=cur_node->features->nth(i);
+				  if(cur_feature->is_method() && ((method_class*)cur_feature)->name==method_name) {
+					  method_class* method=(method_class*)cur_feature;
+					  method->set_enclosing_class((class__class*)cur_node);
+					  return method;
+				  }
+			  }
+			  cur_node=cur_node->get_parentnd();
+		  }
+	  }
+	}
+	return NULL;	//never reached
+}
+
+void CgenClassTable::emit_method_name(Symbol class_name, Symbol method_name) {
+	str<<"@_ZN"<<class_name->get_len()<<class_name<<method_name->get_len()<<method_name;
+}
+
+void CgenClassTable::emit_method_call(Symbol class_name, Symbol method_name) {
+	method_class* method=find_method(class_name, method_name);
+	str<<"\tcall void ";
+	emit_method_name(method->get_enclosing_class()->get_name(), method->name);
+	str<<"(";
+	//TODO: write return and this arguments
+	str<<")\n";
+}
+
 void CgenClassTable::emit_class_name(Symbol name) {
 	str<<"%class."<<name->get_string();
 }
@@ -848,22 +883,30 @@ void CgenClassTable::emit_class_declaration(CgenNode *class_node) {
 	str<<" }\n";
 }
 
+void CgenClassTable::emit_main_method() {
+	str<<"\ndefine i32 @main() {\n";
+	emit_method_call(Main, main_meth);
+	str<<"\t"<<RET<<" i32 0\n";
+	str<<"}\n";
+}
+
 void CgenClassTable::code()
 {
   if(cgen_debug)	cout<<"coding llvm data"<<endl;
   str<<"target datalayout = \"e-p:32:32:32-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:32:64-f32:32:32-f64:32:64-v64:64:64-v128:128:128-a0:0:64-f80:32:32-n8:16:32\"\ntarget triple = \"i386-pc-linux-gnu\"\n\n";
   
-  
-  //TODO: iterate over classes and generate list
   for(List<CgenNode> *l=nds; l!=NULL; l=l->tl()) {
 	  CgenNode *cur_node=l->hd();
-	  if(cur_node->get_name()!=Int && cur_node->get_name()!=Bool)
+	  //if(cur_node->get_name()!=Int && cur_node->get_name()!=Bool)
 		emit_class_declaration(cur_node);
   }
   
+  //declara prim_slot class
+  emit_class_name(prim_slot);
+  str<<" = type { i8 }\n";
   
-  //TODO: generate main function to call the Main.main() method
-  
+  //generate main function to call the Main.main() method
+  emit_main_method();
   
   
   /*

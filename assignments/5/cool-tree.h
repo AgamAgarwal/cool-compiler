@@ -51,6 +51,11 @@ public:
    virtual Feature copy_Feature() = 0;
    
    virtual bool is_attr() = 0;
+   virtual bool is_method() = 0;
+   
+   Class_ enclosing_class;
+   void set_enclosing_class(Class_ ec) { enclosing_class=ec; }
+   Class_ get_enclosing_class() { return enclosing_class; }
 
 #ifdef Feature_EXTRAS
    Feature_EXTRAS
@@ -191,6 +196,7 @@ public:
    void dump(ostream& stream, int n);
    
    bool is_attr() { return false; }
+   bool is_method() { return true; }
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
@@ -217,6 +223,7 @@ public:
    void dump(ostream& stream, int n);
    
    bool is_attr() { return true; }
+   bool is_method() { return false; }
    Symbol get_type_decl() { return type_decl; }
 
 #ifdef Feature_SHARED_EXTRAS

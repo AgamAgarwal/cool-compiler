@@ -43,9 +43,15 @@ private:
    void build_inheritance_tree();
    void set_relations(CgenNodeP nd);
    
+   void emit_main_method();
    void emit_class_declaration(CgenNode*);
    void emit_class_name(Symbol);
    void emit_type(Symbol);
+   void emit_method_call(Symbol, Symbol);
+   
+   void emit_method_name(Symbol, Symbol);
+   
+   method_class* find_method(Symbol, Symbol);
 public:
    CgenClassTable(Classes, ostream& str);
    void code();

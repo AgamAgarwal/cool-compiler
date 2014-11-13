@@ -80,7 +80,7 @@
 //
 #define JALR  "\tjalr\t"  
 #define JAL   "\tjal\t"                 
-#define RET   "\tjr\t"RA"\t"
+#define RET   "ret"
 
 #define SW    "\tsw\t"
 #define LW    "\tlw\t"
