@@ -80,7 +80,7 @@
 //
 #define JALR  "\tjalr\t"  
 #define JAL   "\tjal\t"                 
-#define RET   "ret"
+//#define RET   "\tjr\t"RA"\t"
 
 #define SW    "\tsw\t"
 #define LW    "\tlw\t"
@@ -106,3 +106,8 @@
 #define BGT      "\tbgt\t"
 
 
+//LLVM
+#define RET	"ret"
+
+#define RET_VAR	"%agg.result"
+#define THIS	"%this"

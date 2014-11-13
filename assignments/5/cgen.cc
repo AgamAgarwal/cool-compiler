@@ -894,7 +894,25 @@ void CgenClassTable::emit_method_definition(Symbol class_name, method_class* met
 	str<<"\ndefine linkonce_odr void ";
 	emit_method_name(class_name, method->name);
 	str<<"(";
-	//TODO: print return+this+formals
+	
+	//return value
+	emit_class_name(method->return_type);
+	str<<"* noalias sret "<<RET_VAR;
+	
+	str<<", ";
+	
+	//this
+	emit_class_name(class_name);
+	str<<"* "<<THIS;
+	
+	for(int i=method->formals->first(); method->formals->more(i); i=method->formals->next(i)) {
+		formal_class *formal=(formal_class*)method->formals->nth(i);
+		str<<", ";
+		emit_class_name(formal->type_decl);
+		str<<"* byval align 8 %"<<formal->name;
+	}
+	
+	
 	str<<") align 2 {\n";
 	//TODO: print function contents
 	str<<"}\n";
