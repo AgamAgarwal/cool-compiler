@@ -42,7 +42,9 @@ private:
    void install_classes(Classes cs);
    void build_inheritance_tree();
    void set_relations(CgenNodeP nd);
-   
+
+
+public:   
    void emit_main_method();
    void emit_class_declaration(CgenNode*);
    void emit_class_name(Symbol);
@@ -55,12 +57,19 @@ private:
    void emit_method_name(Symbol, Symbol);
    
    method_class* find_method(Symbol, Symbol);
-public:
+   
    CgenClassTable(Classes, ostream& str);
    void code();
    CgenNodeP root();
 };
 
+
+CgenClassTable *codegen_classtable;
+
+#define cgct codegen_classtable
+
+typedef long reg;
+reg cur_register;
 
 class CgenNode : public class__class {
 private: 

@@ -135,8 +135,8 @@ void program_class::cgen(ostream &os)
   os << "; start of generated code\n";
 
   initialize_constants();
-  CgenClassTable *codegen_classtable = new CgenClassTable(classes,os);
-
+  codegen_classtable = new CgenClassTable(classes,os);
+  codegen_classtable->code();
   os << "\n; end of generated code\n";
 }
 
@@ -187,6 +187,7 @@ static void emit_load_string(char *dest, StringEntry *str, ostream& s)
 {
   emit_partial_load_address(dest,s);
   str->code_ref(s);
+  s<<str->get_string();
   s << endl;
 }
 
@@ -194,6 +195,7 @@ static void emit_load_int(char *dest, IntEntry *i, ostream& s)
 {
   emit_partial_load_address(dest,s);
   i->code_ref(s);
+  s<<i->get_string();
   s << endl;
 }
 
@@ -629,7 +631,6 @@ CgenClassTable::CgenClassTable(Classes classes, ostream& s) : nds(NULL) , str(s)
    install_classes(classes);
    build_inheritance_tree();
 
-   code();
    exitscope();
 }
 
@@ -867,17 +868,13 @@ void CgenClassTable::emit_class_declaration(CgenNode *class_node) {
 	emit_class_name(class_node->get_name());
 	str<<" = type { ";
 	
-	if(class_node->get_name()==Object)
-		str<<"i8";
-	else {
-		//get parent name
-		emit_class_name(class_node->get_parentnd()->get_name());
-		for(int i=class_node->features->first();class_node->features->more(i); i=class_node->features->next(i)) {
-			Feature f=class_node->features->nth(i);
-			if(f->is_attr()) {
-				str<<", ";
-				emit_type(((attr_class*)f)->get_type_decl());
-			}
+	//get parent name
+	emit_class_name(class_node->get_parentnd()->get_name());
+	for(int i=class_node->features->first();class_node->features->more(i); i=class_node->features->next(i)) {
+		Feature f=class_node->features->nth(i);
+		if(f->is_attr()) {
+			str<<", ";
+			emit_type(((attr_class*)f)->get_type_decl());
 		}
 	}
 	str<<" }\n";
@@ -889,17 +886,13 @@ void CgenClassTable::emit_main_method() {
 	emit_class_name(Main);
 	str<<", align 8\n";
 	method_class* method=find_method(Main, main_meth);
-	
-	str<<"\t%1 = alloca ";
+
+	str<<"\tcall ";
 	emit_class_name(method->return_type);
-	str<<", align 8\n";
-	
-	str<<"\tcall void ";
+	str<<"* ";
 	emit_method_name(method->get_enclosing_class()->get_name(), method->name);
 	str<<"(";
 	
-	emit_class_name(method->return_type);
-	str<<"* sret %1, ";
 	emit_class_name(Main);
 	str<<"* %m";
 	
@@ -909,15 +902,11 @@ void CgenClassTable::emit_main_method() {
 }
 
 void CgenClassTable::emit_method_definition(Symbol class_name, method_class* method) {
-	str<<"\ndefine linkonce_odr void ";
+	str<<"\ndefine linkonce_odr ";
+	emit_class_name(method->return_type);
+	str<<"* ";
 	emit_method_name(class_name, method->name);
 	str<<"(";
-	
-	//return value
-	emit_class_name(method->return_type);
-	str<<"* noalias sret "<<RET_VAR;
-	
-	str<<", ";
 	
 	//this
 	emit_class_name(class_name);
@@ -932,8 +921,18 @@ void CgenClassTable::emit_method_definition(Symbol class_name, method_class* met
 	
 	
 	str<<") align 2 {\n";
-	//TODO: print function contents
-	str<<"\t"<<RET<<" void\n";
+	cur_register=1;
+	method->expr->code(str);//TODO: print function contents
+	
+	str<<"\t%"<<(cur_register+1)<<" = bitcast ";
+	emit_class_name(method->expr->get_type());
+	str<<"* %"<<cur_register<<" to ";
+	emit_class_name(method->return_type);
+	str<<"*\n";
+	
+	str<<"\t"<<RET<<" ";
+	emit_class_name(method->return_type);
+	str<<"* %"<<(cur_register+1)<<"\n";
 	str<<"}\n";
 }
 
@@ -953,12 +952,16 @@ void CgenClassTable::code()
   
   for(List<CgenNode> *l=nds; l!=NULL; l=l->tl()) {
 	  CgenNode *cur_node=l->hd();
-	  emit_class_declaration(cur_node);
+	  if(!cur_node->basic())
+		emit_class_declaration(cur_node);
   }
   
-  //declara prim_slot class
-  emit_class_name(prim_slot);
-  str<<" = type { i8 }\n";
+  //defining basic types
+  str<<"%class.String = type { %class.Object, %class.Int, i8* }\n";
+  str<<"%class.Bool = type { %class.Object, i8 }\n";
+  str<<"%class.Int = type { %class.Object, i32 }\n";
+  str<<"%class.IO = type { %class.Object }\n";
+  str<<"%class.Object = type { i8 }\n";
   
   //generate main function to call the Main.main() method
   emit_main_method();
@@ -969,6 +972,11 @@ void CgenClassTable::code()
 	  if(!cur_node->basic())
 		emit_methods_definitions(cur_node);
   }
+  
+  
+  //generate inbuilt declaration
+  str<<"\n\n";
+  str<<"declare noalias i8* @_Znwm(i64)\n";
   
   /*
   if (cgen_debug) cout << "coding global data" << endl;
@@ -1085,7 +1093,50 @@ void int_const_class::code(ostream& s)
   //
   // Need to be sure we have an IntEntry *, not an arbitrary Symbol
   //
-  emit_load_int(ACC,inttable.lookup_string(token->get_string()),s);
+  //emit_load_int(ACC,inttable.lookup_string(token->get_string()),s);
+  
+  reg x=cur_register;
+  
+  //Allocate an object of Int class in cur_register='x'
+  s<<"\t%"<<x<<" = alloca ";
+  cgct->emit_class_name(Int);
+  s<<"*, align 8\n";
+  
+  //call Znwm with sizeof(Int) to create object.Store in 'x+1'
+  s<<"\t%"<<(x+1)<<" = call noalias i8* @_Znwm(i64 8)\n";
+  
+  //Bitcast that to Class.Int pointer. store to 'x+2'
+  s<<"\t%"<<(x+2)<<" = bitcast i8* %"<<(x+1)<<" to ";
+  cgct->emit_class_name(Int);
+  s<<"*\n";
+  
+  //store 'x+2' to *'x'
+  s<<"\tstore ";
+  cgct->emit_class_name(Int);
+  s<<"* %"<<(x+2)<<", ";
+  cgct->emit_class_name(Int);
+  s<<"** %"<<(x)<<", align 8\n";
+  
+  //load *'x' to 'x+3'
+  s<<"\t%"<<(x+3)<<" = load ";
+  cgct->emit_class_name(Int);
+  s<<"** %"<<(x)<<", align 8\n";
+  
+  //get ptr of val from the pointer 'x+3' and store it to 'x+4'
+  //prim_slot??
+  s<<"\t%"<<(x+4)<<" = getelementptr inbounds ";
+  cgct->emit_class_name(Int);
+  s<<"* %"<<(x+3)<<", i32 0, i32 1\n";
+  
+  //store actual value of integer to *'x+4'
+  s<<"\tstore i32 "<<inttable.lookup_string(token->get_string())->get_string()<<", i32* %"<<(x+4)<<", align 4\n";
+  
+  //store the Int class object into last register.
+  s<<"\t%"<<(x+5)<<" = load ";
+  cgct->emit_class_name(Int);
+  s<<"** %"<<x<<"\n";
+  
+  cur_register = x+5;
 }
 
 void string_const_class::code(ostream& s)
