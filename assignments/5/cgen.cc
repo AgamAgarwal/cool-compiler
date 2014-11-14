@@ -1108,7 +1108,7 @@ void int_const_class::code(ostream& s)
   s<<"* %"<<x<<", i32 0, i32 1\n";
   
   //store actual value of integer to *'x+1'
-  s<<"\tstore i32 "<<inttable.lookup_string(token->get_string())->get_string()<<", i32* %"<<(x+1)<<", align 4\n";
+  s<<"\tstore i32 "<<token->get_string()<<", i32* %"<<(x+1)<<", align 4\n";
   
   //allocate a pointer and store address of 'x'
   s<<"\t%"<<(x+2)<<" = alloca ";
