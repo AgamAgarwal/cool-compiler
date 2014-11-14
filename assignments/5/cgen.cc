@@ -1100,43 +1100,33 @@ void int_const_class::code(ostream& s)
   //Allocate an object of Int class in cur_register='x'
   s<<"\t%"<<x<<" = alloca ";
   cgct->emit_class_name(Int);
+  s<<", align 8\n";
+  
+  //get ptr of val from the pointer 'x' and store it to 'x+1'
+  s<<"\t%"<<(x+1)<<" = getelementptr inbounds ";
+  cgct->emit_class_name(Int);
+  s<<"* %"<<x<<", i32 0, i32 1\n";
+  
+  //store actual value of integer to *'x+1'
+  s<<"\tstore i32 "<<inttable.lookup_string(token->get_string())->get_string()<<", i32* %"<<(x+1)<<", align 4\n";
+  
+  //allocate a pointer and store address of 'x'
+  s<<"\t%"<<(x+2)<<" = alloca ";
+  cgct->emit_class_name(Int);
   s<<"*, align 8\n";
   
-  //call Znwm with sizeof(Int) to create object.Store in 'x+1'
-  s<<"\t%"<<(x+1)<<" = call noalias i8* @_Znwm(i64 8)\n";
-  
-  //Bitcast that to Class.Int pointer. store to 'x+2'
-  s<<"\t%"<<(x+2)<<" = bitcast i8* %"<<(x+1)<<" to ";
-  cgct->emit_class_name(Int);
-  s<<"*\n";
-  
-  //store 'x+2' to *'x'
   s<<"\tstore ";
   cgct->emit_class_name(Int);
-  s<<"* %"<<(x+2)<<", ";
+  s<<"* %"<<x<<", ";
   cgct->emit_class_name(Int);
-  s<<"** %"<<(x)<<", align 8\n";
+  s<<"** %"<<(x+2)<<", align 8\n";
   
-  //load *'x' to 'x+3'
+  //store the value of x into last register.
   s<<"\t%"<<(x+3)<<" = load ";
   cgct->emit_class_name(Int);
-  s<<"** %"<<(x)<<", align 8\n";
+  s<<"** %"<<(x+2)<<"\n";
   
-  //get ptr of val from the pointer 'x+3' and store it to 'x+4'
-  //prim_slot??
-  s<<"\t%"<<(x+4)<<" = getelementptr inbounds ";
-  cgct->emit_class_name(Int);
-  s<<"* %"<<(x+3)<<", i32 0, i32 1\n";
-  
-  //store actual value of integer to *'x+4'
-  s<<"\tstore i32 "<<inttable.lookup_string(token->get_string())->get_string()<<", i32* %"<<(x+4)<<", align 4\n";
-  
-  //store the Int class object into last register.
-  s<<"\t%"<<(x+5)<<" = load ";
-  cgct->emit_class_name(Int);
-  s<<"** %"<<x<<"\n";
-  
-  cur_register = x+5;
+  cur_register = x+3;
 }
 
 void string_const_class::code(ostream& s)
