@@ -1136,7 +1136,40 @@ void string_const_class::code(ostream& s)
 
 void bool_const_class::code(ostream& s)
 {
-  emit_load_bool(ACC, BoolConst(val), s);
+  //emit_load_bool(ACC, BoolConst(val), s);
+  
+  reg x=cur_register;
+  
+  //Allocate an object of Int class in cur_register='x'
+  s<<"\t%"<<x<<" = alloca ";
+  cgct->emit_class_name(Bool);
+  s<<", align 1\n";
+  
+  //get ptr of val from the pointer 'x' and store it to 'x+1'
+  s<<"\t%"<<(x+1)<<" = getelementptr inbounds ";
+  cgct->emit_class_name(Bool);
+  s<<"* %"<<x<<", i32 0, i32 1\n";
+  
+  //store actual value of integer to *'x+1'
+  s<<"\tstore i8 "<<val<<", i8* %"<<(x+1)<<", align 1\n";
+  
+  //allocate a pointer and store address of 'x'
+  s<<"\t%"<<(x+2)<<" = alloca ";
+  cgct->emit_class_name(Bool);
+  s<<"*, align 1\n";
+  
+  s<<"\tstore ";
+  cgct->emit_class_name(Bool);
+  s<<"* %"<<x<<", ";
+  cgct->emit_class_name(Bool);
+  s<<"** %"<<(x+2)<<", align 1\n";
+  
+  //store the value of x into last register.
+  s<<"\t%"<<(x+3)<<" = load ";
+  cgct->emit_class_name(Bool);
+  s<<"** %"<<(x+2)<<"\n";
+  
+  cur_register = x+3;
 }
 
 void new__class::code(ostream &s) {
