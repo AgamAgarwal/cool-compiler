@@ -887,7 +887,7 @@ void CgenClassTable::emit_main_method() {
 	str<<", align 8\n";
 	method_class* method=find_method(Main, main_meth);
 
-	str<<"\tcall ";
+	str<<"\t%1 = call ";
 	emit_class_name(method->return_type);
 	str<<"* ";
 	emit_method_name(method->get_enclosing_class()->get_name(), method->name);
@@ -1074,6 +1074,70 @@ void let_class::code(ostream &s) {
 }
 
 void plus_class::code(ostream &s) {
+	
+	//code e1
+	e1->code(s);
+	
+	//get register number of first 'x'
+	reg x=cur_register-1;
+	
+	//code e2
+	e2->code(s);
+	
+	//get register number of second 'y'
+	reg y=cur_register-1;
+	
+	//get element pointer to value of first ('x') to 'y+1'
+	s<<"\t%"<<(y+1)<<" = getelementptr inbounds ";
+	cgct->emit_class_name(Int);
+	s<<"* %"<<x<<", i32 0, i32 1\n";
+	
+	//load value from the pointer to 'y+2'
+	s<<"\t%"<<(y+2)<<" = load i32* %"<<(y+1)<<", align 4\n";
+	
+	//get element pointer to value of second ('y') to 'y+3'
+	s<<"\t%"<<(y+3)<<" = getelementptr inbounds ";
+	cgct->emit_class_name(Int);
+	s<<"* %"<<y<<", i32 0, i32 1\n";
+	
+	//load value from the pointer to 'y+4'
+	s<<"\t%"<<(y+4)<<" = load i32* %"<<(y+3)<<", align 4\n";
+	
+	//add 'y+2' and 'y+4' and store it to 'y+5'
+	s<<"\t%"<<(y+5)<<" = add nsw i32 %"<<(y+2)<<", %"<<(y+4)<<"\n";
+	
+	//allocate memory to a new Int for sum at 'y+6'
+	s<<"\t%"<<(y+6)<<" = alloca ";
+	cgct->emit_class_name(Int);
+	s<<", align 4\n";
+	
+	//get element pointer to value of sum ('y+6') to 'y+7'
+	s<<"\t%"<<(y+7)<<" = getelementptr inbounds ";
+	cgct->emit_class_name(Int);
+	s<<"* %"<<(y+6)<<", i32 0, i32 1\n";
+	
+	//store 'y+5' to 'y+7'
+	s<<"\tstore i32 %"<<(y+5)<<", i32* %"<<(y+7)<<", align 4\n";
+	
+	//copy 'y+6' to new Int (to get it to last register)
+	
+	//allocate a pointer and store address of 'y+6'
+	s<<"\t%"<<(y+8)<<" = alloca ";
+	cgct->emit_class_name(Int);
+	s<<"*, align 8\n";
+	
+	s<<"\tstore ";
+	cgct->emit_class_name(Int);
+	s<<"* %"<<(y+6)<<", ";
+	cgct->emit_class_name(Int);
+	s<<"** %"<<(y+8)<<", align 8\n";
+	
+	//store the value of x into last register.
+	s<<"\t%"<<(y+9)<<" = load ";
+	cgct->emit_class_name(Int);
+	s<<"** %"<<(y+8)<<"\n";
+	
+	cur_register=y+10;
 }
 
 void sub_class::code(ostream &s) {
