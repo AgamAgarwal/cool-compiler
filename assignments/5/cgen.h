@@ -3,6 +3,7 @@
 #include "emit.h"
 #include "cool-tree.h"
 #include "symtab.h"
+#include <map>
 
 enum Basicness     {Basic, NotBasic};
 #define TRUE 1
@@ -44,7 +45,10 @@ private:
    void set_relations(CgenNodeP nd);
 
 
-public:   
+public:
+   
+   std::map<StringEntry*, int> strings;
+   
    void emit_main_method();
    void emit_class_declaration(CgenNode*);
    void emit_class_name(Symbol);

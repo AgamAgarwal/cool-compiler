@@ -961,7 +961,16 @@ void CgenClassTable::code()
   str<<"%class.Bool = type { %class.Object, i8 }\n";
   str<<"%class.Int = type { %class.Object, i32 }\n";
   str<<"%class.IO = type { %class.Object }\n";
-  str<<"%class.Object = type { i8 }\n";
+  str<<"%class.Object = type { i8 }\n\n";
+  
+  //get all strings from the string table into the map
+  for(int i=stringtable.next(stringtable.first()); stringtable.more(i); i=stringtable.next(i)) {
+	  StringEntry *cur_string=stringtable.lookup(i);
+	  strings.insert(std::pair<StringEntry*, int>(cur_string, i));
+	  str<<"@.str"<<i<<" = private unnamed_addr constant ["<<(cur_string->get_len()+1)<<" x i8] c\""<<cur_string->get_string()<<"\\00\", align 1\n";
+  }
+  
+  str<<"\n";
   
   //generate main function to call the Main.main() method
   emit_main_method();
@@ -1134,7 +1143,7 @@ void int_const_class::code(ostream& s)
 
 void string_const_class::code(ostream& s)
 {
-  emit_load_string(ACC,stringtable.lookup_string(token->get_string()),s);
+  //emit_load_string(ACC,stringtable.lookup_string(token->get_string()),s);
 }
 
 void bool_const_class::code(ostream& s)
