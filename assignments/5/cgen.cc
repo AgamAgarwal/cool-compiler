@@ -924,15 +924,15 @@ void CgenClassTable::emit_method_definition(Symbol class_name, method_class* met
 	cur_register=1;
 	method->expr->code(str);//TODO: print function contents
 	
-	str<<"\t%"<<(cur_register+1)<<" = bitcast ";
+	str<<"\t%"<<cur_register<<" = bitcast ";
 	emit_class_name(method->expr->get_type());
-	str<<"* %"<<cur_register<<" to ";
+	str<<"* %"<<(cur_register-1)<<" to ";
 	emit_class_name(method->return_type);
 	str<<"*\n";
 	
 	str<<"\t"<<RET<<" ";
 	emit_class_name(method->return_type);
-	str<<"* %"<<(cur_register+1)<<"\n";
+	str<<"* %"<<cur_register<<"\n";
 	str<<"}\n";
 }
 
@@ -1056,6 +1056,9 @@ void typcase_class::code(ostream &s) {
 }
 
 void block_class::code(ostream &s) {
+	//iterate over each expression in the block and code them
+	for(int i=body->first(); body->more(i); i=body->next(i))
+		body->nth(i)->code(s);
 }
 
 void let_class::code(ostream &s) {
@@ -1126,7 +1129,7 @@ void int_const_class::code(ostream& s)
   cgct->emit_class_name(Int);
   s<<"** %"<<(x+2)<<"\n";
   
-  cur_register = x+3;
+  cur_register = x+4;
 }
 
 void string_const_class::code(ostream& s)
@@ -1169,7 +1172,7 @@ void bool_const_class::code(ostream& s)
   cgct->emit_class_name(Bool);
   s<<"** %"<<(x+2)<<"\n";
   
-  cur_register = x+3;
+  cur_register = x+4;
 }
 
 void new__class::code(ostream &s) {
