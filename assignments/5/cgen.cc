@@ -986,7 +986,7 @@ void CgenClassTable::code()
   //generate inbuilt declaration
   str<<"\n\n";
   str<<"declare noalias i8* @_Znwm(i64)\n";
-  
+  str<<"declare i8* @strcpy(i8*, i8*)\n";
   /*
   if (cgen_debug) cout << "coding global data" << endl;
   code_global_data();
@@ -1112,7 +1112,7 @@ void int_const_class::code(ostream& s)
   //Allocate an object of Int class in cur_register='x'
   s<<"\t%"<<x<<" = alloca ";
   cgct->emit_class_name(Int);
-  s<<", align 8\n";
+  s<<", align 4\n";
   
   //get ptr of val from the pointer 'x' and store it to 'x+1'
   s<<"\t%"<<(x+1)<<" = getelementptr inbounds ";
@@ -1144,6 +1144,43 @@ void int_const_class::code(ostream& s)
 void string_const_class::code(ostream& s)
 {
   //emit_load_string(ACC,stringtable.lookup_string(token->get_string()),s);
+  
+  reg x=cur_register;
+  
+  //Allocate an object of Int class in cur_register='x'
+  s<<"\t%"<<x<<" = alloca ";
+  cgct->emit_class_name(Str);
+  s<<", align 8\n";
+  
+  //get ptr of val from the pointer 'x' and store it to 'x+1'
+  s<<"\t%"<<(x+1)<<" = getelementptr inbounds ";
+  cgct->emit_class_name(Str);
+  s<<"* %"<<x<<", i32 0, i32 2\n";
+  
+  //load address of 'x+1' to 'x+2'
+  s<<"\t%"<<(x+2)<<" = load i8** %"<<(x+1)<<", align 8\n";
+  
+  StringEntry *str_entry=stringtable.lookup_string(token->get_string());
+  //call strcpy to copy string from constant to 'x+2'
+  s<<"\t%"<<(x+3)<<" = call i8* @strcpy(i8* %"<<(x+2)<<", i8* getelementptr inbounds (["<<(str_entry->get_len()+1)<<" x i8]* @.str"<<cgct->strings[str_entry]<<", i32 0, i32 0))\n";
+  
+  //allocate a pointer and store address of 'x'
+  s<<"\t%"<<(x+4)<<" = alloca ";
+  cgct->emit_class_name(Str);
+  s<<"*, align 8\n";
+  
+  s<<"\tstore ";
+  cgct->emit_class_name(Str);
+  s<<"* %"<<x<<", ";
+  cgct->emit_class_name(Str);
+  s<<"** %"<<(x+4)<<", align 8\n";
+  
+  //store the value of x into last register.
+  s<<"\t%"<<(x+5)<<" = load ";
+  cgct->emit_class_name(Str);
+  s<<"** %"<<(x+4)<<"\n";
+  
+  cur_register = x+6;
 }
 
 void bool_const_class::code(ostream& s)
@@ -1162,7 +1199,7 @@ void bool_const_class::code(ostream& s)
   cgct->emit_class_name(Bool);
   s<<"* %"<<x<<", i32 0, i32 1\n";
   
-  //store actual value of integer to *'x+1'
+  //store actual value of boolean to *'x+1'
   s<<"\tstore i8 "<<val<<", i8* %"<<(x+1)<<", align 1\n";
   
   //allocate a pointer and store address of 'x'
