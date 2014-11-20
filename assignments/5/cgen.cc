@@ -129,6 +129,18 @@ BoolConst truebool(TRUE);
 //
 //*********************************************************
 
+reg new_reg() {
+	return cur_register++;
+}
+
+reg last_reg() {
+	return cur_register-1;
+}
+
+reg reset_cur_register() {
+	return (cur_register=1);
+}
+
 void program_class::cgen(ostream &os) 
 {
   // llvm wants comments to start with ';'
@@ -921,18 +933,20 @@ void CgenClassTable::emit_method_definition(Symbol class_name, method_class* met
 	
 	
 	str<<") align 2 {\n";
-	cur_register=1;
+	reset_cur_register();
 	method->expr->code(str);//TODO: print function contents
 	
-	str<<"\t%"<<cur_register<<" = bitcast ";
+	
+	reg last_result=last_reg(), converted_result=new_reg();
+	str<<"\t%"<<converted_result<<" = bitcast ";
 	emit_class_name(method->expr->get_type());
-	str<<"* %"<<(cur_register-1)<<" to ";
+	str<<"* %"<<last_result<<" to ";
 	emit_class_name(method->return_type);
 	str<<"*\n";
 	
 	str<<"\t"<<RET<<" ";
 	emit_class_name(method->return_type);
-	str<<"* %"<<cur_register<<"\n";
+	str<<"* %"<<converted_result<<"\n";
 	str<<"}\n";
 }
 
@@ -1079,65 +1093,65 @@ void plus_class::code(ostream &s) {
 	e1->code(s);
 	
 	//get register number of first 'x'
-	reg x=cur_register-1;
+	reg x=last_reg();
 	
 	//code e2
 	e2->code(s);
 	
 	//get register number of second 'y'
-	reg y=cur_register-1;
+	reg y=last_reg();
+	
+	reg x_pointer, x_value, y_pointer, y_value, res_value, res_obj, res_pointer, res_obj_pointer, final_res;
 	
 	//get element pointer to value of first ('x') to 'y+1'
-	s<<"\t%"<<(y+1)<<" = getelementptr inbounds ";
+	s<<"\t%"<<(x_pointer=new_reg())<<" = getelementptr inbounds ";
 	cgct->emit_class_name(Int);
 	s<<"* %"<<x<<", i32 0, i32 1\n";
 	
 	//load value from the pointer to 'y+2'
-	s<<"\t%"<<(y+2)<<" = load i32* %"<<(y+1)<<", align 4\n";
+	s<<"\t%"<<(x_value=new_reg())<<" = load i32* %"<<x_pointer<<", align 4\n";
 	
 	//get element pointer to value of second ('y') to 'y+3'
-	s<<"\t%"<<(y+3)<<" = getelementptr inbounds ";
+	s<<"\t%"<<(y_pointer=new_reg())<<" = getelementptr inbounds ";
 	cgct->emit_class_name(Int);
 	s<<"* %"<<y<<", i32 0, i32 1\n";
 	
 	//load value from the pointer to 'y+4'
-	s<<"\t%"<<(y+4)<<" = load i32* %"<<(y+3)<<", align 4\n";
+	s<<"\t%"<<(y_value=new_reg())<<" = load i32* %"<<y_pointer<<", align 4\n";
 	
 	//add 'y+2' and 'y+4' and store it to 'y+5'
-	s<<"\t%"<<(y+5)<<" = add nsw i32 %"<<(y+2)<<", %"<<(y+4)<<"\n";
+	s<<"\t%"<<(res_value=new_reg())<<" = add nsw i32 %"<<x_value<<", %"<<y_value<<"\n";
 	
 	//allocate memory to a new Int for sum at 'y+6'
-	s<<"\t%"<<(y+6)<<" = alloca ";
+	s<<"\t%"<<(res_obj=new_reg())<<" = alloca ";
 	cgct->emit_class_name(Int);
 	s<<", align 4\n";
 	
 	//get element pointer to value of sum ('y+6') to 'y+7'
-	s<<"\t%"<<(y+7)<<" = getelementptr inbounds ";
+	s<<"\t%"<<(res_pointer=new_reg())<<" = getelementptr inbounds ";
 	cgct->emit_class_name(Int);
-	s<<"* %"<<(y+6)<<", i32 0, i32 1\n";
+	s<<"* %"<<res_obj<<", i32 0, i32 1\n";
 	
 	//store 'y+5' to 'y+7'
-	s<<"\tstore i32 %"<<(y+5)<<", i32* %"<<(y+7)<<", align 4\n";
+	s<<"\tstore i32 %"<<(res_value)<<", i32* %"<<(res_pointer)<<", align 4\n";
 	
 	//copy 'y+6' to new Int (to get it to last register)
 	
 	//allocate a pointer and store address of 'y+6'
-	s<<"\t%"<<(y+8)<<" = alloca ";
+	s<<"\t%"<<(res_obj_pointer=new_reg())<<" = alloca ";
 	cgct->emit_class_name(Int);
 	s<<"*, align 8\n";
 	
 	s<<"\tstore ";
 	cgct->emit_class_name(Int);
-	s<<"* %"<<(y+6)<<", ";
+	s<<"* %"<<res_obj<<", ";
 	cgct->emit_class_name(Int);
-	s<<"** %"<<(y+8)<<", align 8\n";
+	s<<"** %"<<res_obj_pointer<<", align 8\n";
 	
 	//store the value of x into last register.
-	s<<"\t%"<<(y+9)<<" = load ";
+	s<<"\t%"<<(final_res=new_reg())<<" = load ";
 	cgct->emit_class_name(Int);
-	s<<"** %"<<(y+8)<<"\n";
-	
-	cur_register=y+10;
+	s<<"** %"<<res_obj_pointer<<"\n";
 }
 
 void sub_class::code(ostream &s) {
@@ -1171,118 +1185,113 @@ void int_const_class::code(ostream& s)
   //
   //emit_load_int(ACC,inttable.lookup_string(token->get_string()),s);
   
-  reg x=cur_register;
+  reg obj, val_pointer, obj_pointer, final_res;
   
   //Allocate an object of Int class in cur_register='x'
-  s<<"\t%"<<x<<" = alloca ";
+  s<<"\t%"<<(obj=new_reg())<<" = alloca ";
   cgct->emit_class_name(Int);
   s<<", align 4\n";
   
   //get ptr of val from the pointer 'x' and store it to 'x+1'
-  s<<"\t%"<<(x+1)<<" = getelementptr inbounds ";
+  s<<"\t%"<<(val_pointer=new_reg())<<" = getelementptr inbounds ";
   cgct->emit_class_name(Int);
-  s<<"* %"<<x<<", i32 0, i32 1\n";
+  s<<"* %"<<obj<<", i32 0, i32 1\n";
   
   //store actual value of integer to *'x+1'
-  s<<"\tstore i32 "<<token->get_string()<<", i32* %"<<(x+1)<<", align 4\n";
+  s<<"\tstore i32 "<<token->get_string()<<", i32* %"<<val_pointer<<", align 4\n";
   
   //allocate a pointer and store address of 'x'
-  s<<"\t%"<<(x+2)<<" = alloca ";
+  s<<"\t%"<<(obj_pointer=new_reg())<<" = alloca ";
   cgct->emit_class_name(Int);
   s<<"*, align 8\n";
   
   s<<"\tstore ";
   cgct->emit_class_name(Int);
-  s<<"* %"<<x<<", ";
+  s<<"* %"<<obj<<", ";
   cgct->emit_class_name(Int);
-  s<<"** %"<<(x+2)<<", align 8\n";
+  s<<"** %"<<obj_pointer<<", align 8\n";
   
   //store the value of x into last register.
-  s<<"\t%"<<(x+3)<<" = load ";
+  s<<"\t%"<<(final_res=new_reg())<<" = load ";
   cgct->emit_class_name(Int);
-  s<<"** %"<<(x+2)<<"\n";
+  s<<"** %"<<obj_pointer<<"\n";
   
-  cur_register = x+4;
 }
 
 void string_const_class::code(ostream& s)
 {
   //emit_load_string(ACC,stringtable.lookup_string(token->get_string()),s);
   
-  reg x=cur_register;
+  reg obj, val_ptr, val_ptr_ptr, obj_ptr, final_res;
   
   //Allocate an object of Int class in cur_register='x'
-  s<<"\t%"<<x<<" = alloca ";
+  s<<"\t%"<<(obj=new_reg())<<" = alloca ";
   cgct->emit_class_name(Str);
   s<<", align 8\n";
   
   //get ptr of val from the pointer 'x' and store it to 'x+1'
-  s<<"\t%"<<(x+1)<<" = getelementptr inbounds ";
+  s<<"\t%"<<(val_ptr=new_reg())<<" = getelementptr inbounds ";
   cgct->emit_class_name(Str);
-  s<<"* %"<<x<<", i32 0, i32 2\n";
+  s<<"* %"<<obj<<", i32 0, i32 2\n";
   
   //load address of 'x+1' to 'x+2'
-  s<<"\t%"<<(x+2)<<" = load i8** %"<<(x+1)<<", align 8\n";
+  s<<"\t%"<<(val_ptr_ptr=new_reg())<<" = load i8** %"<<val_ptr<<", align 8\n";
   
   StringEntry *str_entry=stringtable.lookup_string(token->get_string());
   //call strcpy to copy string from constant to 'x+2'
-  s<<"\t%"<<(x+3)<<" = call i8* @strcpy(i8* %"<<(x+2)<<", i8* getelementptr inbounds (["<<(str_entry->get_len()+1)<<" x i8]* @.str"<<cgct->strings[str_entry]<<", i32 0, i32 0))\n";
+  s<<"\tcall i8* @strcpy(i8* %"<<val_ptr_ptr<<", i8* getelementptr inbounds (["<<(str_entry->get_len()+1)<<" x i8]* @.str"<<cgct->strings[str_entry]<<", i32 0, i32 0))\n";
   
   //allocate a pointer and store address of 'x'
-  s<<"\t%"<<(x+4)<<" = alloca ";
+  s<<"\t%"<<(obj_ptr=new_reg())<<" = alloca ";
   cgct->emit_class_name(Str);
   s<<"*, align 8\n";
   
   s<<"\tstore ";
   cgct->emit_class_name(Str);
-  s<<"* %"<<x<<", ";
+  s<<"* %"<<obj<<", ";
   cgct->emit_class_name(Str);
-  s<<"** %"<<(x+4)<<", align 8\n";
+  s<<"** %"<<obj_ptr<<", align 8\n";
   
   //store the value of x into last register.
-  s<<"\t%"<<(x+5)<<" = load ";
+  s<<"\t%"<<(final_res=new_reg())<<" = load ";
   cgct->emit_class_name(Str);
-  s<<"** %"<<(x+4)<<"\n";
-  
-  cur_register = x+6;
+  s<<"** %"<<obj_ptr<<"\n";
 }
 
 void bool_const_class::code(ostream& s)
 {
   //emit_load_bool(ACC, BoolConst(val), s);
   
-  reg x=cur_register;
+  reg obj, val_ptr, obj_ptr, final_res;
   
   //Allocate an object of Int class in cur_register='x'
-  s<<"\t%"<<x<<" = alloca ";
+  s<<"\t%"<<(obj=new_reg())<<" = alloca ";
   cgct->emit_class_name(Bool);
   s<<", align 1\n";
   
   //get ptr of val from the pointer 'x' and store it to 'x+1'
-  s<<"\t%"<<(x+1)<<" = getelementptr inbounds ";
+  s<<"\t%"<<(val_ptr=new_reg())<<" = getelementptr inbounds ";
   cgct->emit_class_name(Bool);
-  s<<"* %"<<x<<", i32 0, i32 1\n";
+  s<<"* %"<<obj<<", i32 0, i32 1\n";
   
   //store actual value of boolean to *'x+1'
-  s<<"\tstore i8 "<<val<<", i8* %"<<(x+1)<<", align 1\n";
+  s<<"\tstore i8 "<<val<<", i8* %"<<val_ptr<<", align 1\n";
   
   //allocate a pointer and store address of 'x'
-  s<<"\t%"<<(x+2)<<" = alloca ";
+  s<<"\t%"<<(obj_ptr=new_reg())<<" = alloca ";
   cgct->emit_class_name(Bool);
   s<<"*, align 1\n";
   
   s<<"\tstore ";
   cgct->emit_class_name(Bool);
-  s<<"* %"<<x<<", ";
+  s<<"* %"<<obj<<", ";
   cgct->emit_class_name(Bool);
-  s<<"** %"<<(x+2)<<", align 1\n";
+  s<<"** %"<<obj_ptr<<", align 1\n";
   
   //store the value of x into last register.
-  s<<"\t%"<<(x+3)<<" = load ";
+  s<<"\t%"<<(final_res=new_reg())<<" = load ";
   cgct->emit_class_name(Bool);
-  s<<"** %"<<(x+2)<<"\n";
-  
-  cur_register = x+4;
+  s<<"** %"<<obj_ptr<<"\n";
 }
 
 void new__class::code(ostream &s) {
