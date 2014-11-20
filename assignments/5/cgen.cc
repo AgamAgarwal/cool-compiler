@@ -854,6 +854,10 @@ void CgenClassTable::emit_method_name(Symbol class_name, Symbol method_name) {
 	str<<"@_ZN"<<class_name->get_len()<<class_name<<method_name->get_len()<<method_name;
 }
 
+void CgenClassTable::emit_constructor_name(Symbol class_name) {
+	str<<"@_ZN"<<class_name->get_len()<<class_name<<"C2Ev";
+}
+
 void CgenClassTable::emit_method_call(Symbol class_name, Symbol method_name) {
 	method_class* method=find_method(class_name, method_name);
 	str<<"\tcall void ";
@@ -959,6 +963,68 @@ void CgenClassTable::emit_methods_definitions(CgenNode *class_node) {
 	}
 }
 
+void CgenClassTable::emit_constructor(CgenNode *class_node) {
+	str<<"define linkonce_odr void ";
+	emit_constructor_name(class_node->get_name());
+	str<<"(";
+	emit_class_name(class_node->get_name());
+	str<<"* %this) unnamed_addr align 2 {\n";
+	
+	reset_cur_register();
+	reg obj_ptr, this_val_ptr, parent_obj;
+	
+	str<<"\t%"<<(obj_ptr=new_reg())<<" = alloca ";
+	emit_class_name(class_node->get_name());
+	str<<"*, align 8\n";
+	
+	str<<"\tstore ";
+	emit_class_name(class_node->get_name());
+	str<<"* %this, ";
+	emit_class_name(class_node->get_name());
+	str<<"** %"<<obj_ptr<<", align 8\n";
+	
+	str<<"\t%"<<(this_val_ptr=new_reg())<<" = load ";
+	emit_class_name(class_node->get_name());;
+	str<<"** %"<<obj_ptr<<"\n";
+	
+	//convert to parent and call its constructor
+	str<<"\t%"<<(parent_obj=new_reg())<<" = bitcast ";
+	emit_class_name(class_node->get_name());
+	str<<"* "<<this_val_ptr<<" to ";
+	emit_class_name(class_node->get_parentnd()->get_name());
+	str<<"*\n";
+	
+	str<<"\tcall void ";
+	emit_constructor_name(class_node->get_parentnd()->get_name());
+	str<<"(";
+	emit_class_name(class_node->get_parentnd()->get_name());
+	str<<"* %"<<parent_obj<<")\n";
+	
+	
+	//iterate over all features and call constructors for each attribute
+	Features features=class_node->features;
+	int index;
+	for(int i=features->first(), index=1; features->more(i); i=features->next(i), index++) {
+		if(!features->nth(i)->is_attr())
+			continue;
+		
+		attr_class* cur_attr=(attr_class*)features->nth(i);
+		
+		reg cur_attr_ptr=new_reg();
+		str<<"\t%"<<cur_attr_ptr<<" = getelementptr inbounds ";
+		emit_class_name(class_node->get_name());
+		str<<"* %"<<this_val_ptr<<", i32 0, i32 "<<index<<"\n";
+		
+		str<<"\tcall void ";
+		emit_constructor_name(cur_attr->get_type_decl());
+		str<<"(";
+		emit_class_name(cur_attr->get_type_decl());
+		str<<"* %"<<cur_attr_ptr<<")\n";
+	}
+	
+	str<<"\tret void\n}\n\n";
+}
+
 void CgenClassTable::code()
 {
   if(cgen_debug)	cout<<"coding llvm data"<<endl;
@@ -994,6 +1060,14 @@ void CgenClassTable::code()
 	  CgenNode *cur_node=l->hd();
 	  if(!cur_node->basic())
 		emit_methods_definitions(cur_node);
+  }
+  
+  
+  //generate all constructors
+  for(List<CgenNode> *l=nds; l!=NULL; l=l->tl()) {
+	  CgenNode *cur_node=l->hd();
+	  if(!cur_node->basic())
+		emit_constructor(cur_node);
   }
   
   
