@@ -1067,6 +1067,45 @@ void static_dispatch_class::code(ostream &s) {
 }
 
 void dispatch_class::code(ostream &s) {
+	method_class *method=cgct->find_method(expr->get_type(), name);
+	
+	expr->code(s);
+	reg expr_last=last_reg(), expr_reg;
+	
+	s<<"\t%"<<(expr_reg=new_reg())<<" = bitcast ";
+	cgct->emit_class_name(expr->get_type());
+	s<<"* %"<<expr_last<<" to ";
+	cgct->emit_class_name(method->get_enclosing_class()->get_name());
+	s<<"*\n";
+	
+	std::vector<reg> actuals_reg;
+	
+	//evaluate each actual and push return register in the actuals_reg vector
+	for(int i=actual->first(); actual->more(i); i=actual->next(i)) {
+		actual->nth(i)->code(s);
+		actuals_reg.push_back(last_reg());
+	}
+	
+	reg final_res=new_reg();
+	
+	s<<"\t%"<<final_res<<" = call ";
+	cgct->emit_class_name(method->return_type);
+	s<<"* ";
+	cgct->emit_method_name(method->get_enclosing_class()->get_name(), method->name);
+	s<<"(";
+	
+	//emit 'this'
+	cgct->emit_class_name(method->get_enclosing_class()->get_name());
+	s<<"* %"<<expr_reg;
+	
+	//emit all actuals with their type
+	for(int i=actual->first(); actual->more(i); i=actual->next(i)) {
+		s<<", ";
+		cgct->emit_class_name(actual->nth(i)->get_type());
+		s<<"* %"<<actuals_reg[i];
+	}
+	
+	s<<")\n";
 }
 
 void cond_class::code(ostream &s) {

@@ -4,6 +4,7 @@
 #include "cool-tree.h"
 #include "symtab.h"
 #include <map>
+#include <vector>
 
 enum Basicness     {Basic, NotBasic};
 #define TRUE 1
