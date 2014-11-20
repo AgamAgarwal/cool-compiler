@@ -871,15 +871,6 @@ void CgenClassTable::emit_class_name(Symbol name) {
 	str<<"%class."<<name->get_string();
 }
 
-void CgenClassTable::emit_type(Symbol type) {
-	if(type==Int)
-		str<<"i32";
-	else if(type==Bool)
-		str<<"i8";
-	else
-		emit_class_name(type);
-}
-
 void CgenClassTable::emit_class_declaration(CgenNode *class_node) {
 	emit_class_name(class_node->get_name());
 	str<<" = type { ";
@@ -890,7 +881,7 @@ void CgenClassTable::emit_class_declaration(CgenNode *class_node) {
 		Feature f=class_node->features->nth(i);
 		if(f->is_attr()) {
 			str<<", ";
-			emit_type(((attr_class*)f)->get_type_decl());
+			emit_class_name(((attr_class*)f)->get_type_decl());
 		}
 	}
 	str<<" }\n";
@@ -1359,7 +1350,7 @@ void dispatch_class::code(ostream &s) {
 	reg final_res=new_reg();
 	
 	s<<"\t%"<<final_res<<" = call ";
-	cgct->emit_class_name(method->return_type);
+	cgct->emit_class_name(method->return_type!=SELF_TYPE?method->return_type:expr->get_type());
 	s<<"* ";
 	cgct->emit_method_name(method->get_enclosing_class()->get_name(), method->name);
 	s<<"(";
@@ -1737,7 +1728,7 @@ void string_const_class::code(ostream& s)
   
   StringEntry *str_entry=stringtable.lookup_string(token->get_string());
   //call strcpy to copy string from constant to 'x+2'
-  s<<"\tcall i8* @strcpy(i8* %"<<val_ptr_ptr<<", i8* getelementptr inbounds (["<<(str_entry->get_len()+1)<<" x i8]* @.str"<<cgct->strings[str_entry]<<", i32 0, i32 0))\n";
+  s<<"\t%"<<new_reg()<<" = call i8* @strcpy(i8* %"<<val_ptr_ptr<<", i8* getelementptr inbounds (["<<(str_entry->get_len()+1)<<" x i8]* @.str"<<cgct->strings[str_entry]<<", i32 0, i32 0))\n";
   
   //allocate a pointer and store address of 'x'
   s<<"\t%"<<(obj_ptr=new_reg())<<" = alloca ";
@@ -1793,6 +1784,19 @@ void bool_const_class::code(ostream& s)
 }
 
 void new__class::code(ostream &s) {
+	reg new_obj=new_reg();
+	
+	//allocate memory
+	s<<"\t%"<<new_obj<<" = alloca ";
+	cgct->emit_class_name(type_name);
+	s<<", align 8\n";
+	
+	//call constructor
+	s<<"\tcall void ";
+	cgct->emit_constructor_name(type_name);
+	s<<"(";
+	cgct->emit_class_name(type_name);
+	s<<"* %"<<new_obj<<")\n";
 }
 
 void isvoid_class::code(ostream &s) {
