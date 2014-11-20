@@ -1155,12 +1155,201 @@ void plus_class::code(ostream &s) {
 }
 
 void sub_class::code(ostream &s) {
+	//code e1
+	e1->code(s);
+	
+	//get register number of first 'x'
+	reg x=last_reg();
+	
+	//code e2
+	e2->code(s);
+	
+	//get register number of second 'y'
+	reg y=last_reg();
+	
+	reg x_pointer, x_value, y_pointer, y_value, res_value, res_obj, res_pointer, res_obj_pointer, final_res;
+	
+	//get element pointer to value of first ('x') to 'y+1'
+	s<<"\t%"<<(x_pointer=new_reg())<<" = getelementptr inbounds ";
+	cgct->emit_class_name(Int);
+	s<<"* %"<<x<<", i32 0, i32 1\n";
+	
+	//load value from the pointer to 'y+2'
+	s<<"\t%"<<(x_value=new_reg())<<" = load i32* %"<<x_pointer<<", align 4\n";
+	
+	//get element pointer to value of second ('y') to 'y+3'
+	s<<"\t%"<<(y_pointer=new_reg())<<" = getelementptr inbounds ";
+	cgct->emit_class_name(Int);
+	s<<"* %"<<y<<", i32 0, i32 1\n";
+	
+	//load value from the pointer to 'y+4'
+	s<<"\t%"<<(y_value=new_reg())<<" = load i32* %"<<y_pointer<<", align 4\n";
+	
+	//add 'y+2' and 'y+4' and store it to 'y+5'
+	s<<"\t%"<<(res_value=new_reg())<<" = sub nsw i32 %"<<x_value<<", %"<<y_value<<"\n";
+	
+	//allocate memory to a new Int for sum at 'y+6'
+	s<<"\t%"<<(res_obj=new_reg())<<" = alloca ";
+	cgct->emit_class_name(Int);
+	s<<", align 4\n";
+	
+	//get element pointer to value of sum ('y+6') to 'y+7'
+	s<<"\t%"<<(res_pointer=new_reg())<<" = getelementptr inbounds ";
+	cgct->emit_class_name(Int);
+	s<<"* %"<<res_obj<<", i32 0, i32 1\n";
+	
+	//store 'y+5' to 'y+7'
+	s<<"\tstore i32 %"<<(res_value)<<", i32* %"<<(res_pointer)<<", align 4\n";
+	
+	//copy 'y+6' to new Int (to get it to last register)
+	
+	//allocate a pointer and store address of 'y+6'
+	s<<"\t%"<<(res_obj_pointer=new_reg())<<" = alloca ";
+	cgct->emit_class_name(Int);
+	s<<"*, align 8\n";
+	
+	s<<"\tstore ";
+	cgct->emit_class_name(Int);
+	s<<"* %"<<res_obj<<", ";
+	cgct->emit_class_name(Int);
+	s<<"** %"<<res_obj_pointer<<", align 8\n";
+	
+	//store the value of x into last register.
+	s<<"\t%"<<(final_res=new_reg())<<" = load ";
+	cgct->emit_class_name(Int);
+	s<<"** %"<<res_obj_pointer<<"\n";
 }
 
 void mul_class::code(ostream &s) {
+	//code e1
+	e1->code(s);
+	
+	//get register number of first 'x'
+	reg x=last_reg();
+	
+	//code e2
+	e2->code(s);
+	
+	//get register number of second 'y'
+	reg y=last_reg();
+	
+	reg x_pointer, x_value, y_pointer, y_value, res_value, res_obj, res_pointer, res_obj_pointer, final_res;
+	
+	//get element pointer to value of first ('x') to 'y+1'
+	s<<"\t%"<<(x_pointer=new_reg())<<" = getelementptr inbounds ";
+	cgct->emit_class_name(Int);
+	s<<"* %"<<x<<", i32 0, i32 1\n";
+	
+	//load value from the pointer to 'y+2'
+	s<<"\t%"<<(x_value=new_reg())<<" = load i32* %"<<x_pointer<<", align 4\n";
+	
+	//get element pointer to value of second ('y') to 'y+3'
+	s<<"\t%"<<(y_pointer=new_reg())<<" = getelementptr inbounds ";
+	cgct->emit_class_name(Int);
+	s<<"* %"<<y<<", i32 0, i32 1\n";
+	
+	//load value from the pointer to 'y+4'
+	s<<"\t%"<<(y_value=new_reg())<<" = load i32* %"<<y_pointer<<", align 4\n";
+	
+	//add 'y+2' and 'y+4' and store it to 'y+5'
+	s<<"\t%"<<(res_value=new_reg())<<" = mul nsw i32 %"<<x_value<<", %"<<y_value<<"\n";
+	
+	//allocate memory to a new Int for sum at 'y+6'
+	s<<"\t%"<<(res_obj=new_reg())<<" = alloca ";
+	cgct->emit_class_name(Int);
+	s<<", align 4\n";
+	
+	//get element pointer to value of sum ('y+6') to 'y+7'
+	s<<"\t%"<<(res_pointer=new_reg())<<" = getelementptr inbounds ";
+	cgct->emit_class_name(Int);
+	s<<"* %"<<res_obj<<", i32 0, i32 1\n";
+	
+	//store 'y+5' to 'y+7'
+	s<<"\tstore i32 %"<<(res_value)<<", i32* %"<<(res_pointer)<<", align 4\n";
+	
+	//copy 'y+6' to new Int (to get it to last register)
+	
+	//allocate a pointer and store address of 'y+6'
+	s<<"\t%"<<(res_obj_pointer=new_reg())<<" = alloca ";
+	cgct->emit_class_name(Int);
+	s<<"*, align 8\n";
+	
+	s<<"\tstore ";
+	cgct->emit_class_name(Int);
+	s<<"* %"<<res_obj<<", ";
+	cgct->emit_class_name(Int);
+	s<<"** %"<<res_obj_pointer<<", align 8\n";
+	
+	//store the value of x into last register.
+	s<<"\t%"<<(final_res=new_reg())<<" = load ";
+	cgct->emit_class_name(Int);
+	s<<"** %"<<res_obj_pointer<<"\n";
 }
 
 void divide_class::code(ostream &s) {
+	//code e1
+	e1->code(s);
+	
+	//get register number of first 'x'
+	reg x=last_reg();
+	
+	//code e2
+	e2->code(s);
+	
+	//get register number of second 'y'
+	reg y=last_reg();
+	
+	reg x_pointer, x_value, y_pointer, y_value, res_value, res_obj, res_pointer, res_obj_pointer, final_res;
+	
+	//get element pointer to value of first ('x') to 'y+1'
+	s<<"\t%"<<(x_pointer=new_reg())<<" = getelementptr inbounds ";
+	cgct->emit_class_name(Int);
+	s<<"* %"<<x<<", i32 0, i32 1\n";
+	
+	//load value from the pointer to 'y+2'
+	s<<"\t%"<<(x_value=new_reg())<<" = load i32* %"<<x_pointer<<", align 4\n";
+	
+	//get element pointer to value of second ('y') to 'y+3'
+	s<<"\t%"<<(y_pointer=new_reg())<<" = getelementptr inbounds ";
+	cgct->emit_class_name(Int);
+	s<<"* %"<<y<<", i32 0, i32 1\n";
+	
+	//load value from the pointer to 'y+4'
+	s<<"\t%"<<(y_value=new_reg())<<" = load i32* %"<<y_pointer<<", align 4\n";
+	
+	//add 'y+2' and 'y+4' and store it to 'y+5'
+	s<<"\t%"<<(res_value=new_reg())<<" = sdiv i32 %"<<x_value<<", %"<<y_value<<"\n";
+	
+	//allocate memory to a new Int for sum at 'y+6'
+	s<<"\t%"<<(res_obj=new_reg())<<" = alloca ";
+	cgct->emit_class_name(Int);
+	s<<", align 4\n";
+	
+	//get element pointer to value of sum ('y+6') to 'y+7'
+	s<<"\t%"<<(res_pointer=new_reg())<<" = getelementptr inbounds ";
+	cgct->emit_class_name(Int);
+	s<<"* %"<<res_obj<<", i32 0, i32 1\n";
+	
+	//store 'y+5' to 'y+7'
+	s<<"\tstore i32 %"<<(res_value)<<", i32* %"<<(res_pointer)<<", align 4\n";
+	
+	//copy 'y+6' to new Int (to get it to last register)
+	
+	//allocate a pointer and store address of 'y+6'
+	s<<"\t%"<<(res_obj_pointer=new_reg())<<" = alloca ";
+	cgct->emit_class_name(Int);
+	s<<"*, align 8\n";
+	
+	s<<"\tstore ";
+	cgct->emit_class_name(Int);
+	s<<"* %"<<res_obj<<", ";
+	cgct->emit_class_name(Int);
+	s<<"** %"<<res_obj_pointer<<", align 8\n";
+	
+	//store the value of x into last register.
+	s<<"\t%"<<(final_res=new_reg())<<" = load ";
+	cgct->emit_class_name(Int);
+	s<<"** %"<<res_obj_pointer<<"\n";
 }
 
 void neg_class::code(ostream &s) {
