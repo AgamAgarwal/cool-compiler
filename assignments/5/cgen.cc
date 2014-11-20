@@ -983,6 +983,33 @@ void CgenClassTable::emit_basic_methods() {
 	str<<"* %this\n";
 	
 	str<<"}\n";
+	
+	
+	//IO.out_string
+	reset_cur_register();
+	str<<"\ndefine linkonce_odr ";
+	emit_class_name(IO);
+	str<<"* ";
+	emit_method_name(IO, out_string);
+	str<<"(";
+	emit_class_name(IO);
+	str<<"* %this, ";
+	emit_class_name(Str);
+	str<<"* %s) align 2 {\n";
+	
+	str<<"\t%"<<(val_ptr=new_reg())<<" = getelementptr inbounds ";
+	emit_class_name(Str);
+	str<<"* %s, i32 0, i32 2\n";
+	
+	str<<"\t%"<<(val=new_reg())<<" = load i8** %"<<val_ptr<<", align 8\n";
+	
+	str<<"\t%"<<new_reg()<<" = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([3 x i8]* @.str_string, i32 0, i32 0), i8* %"<<val<<")\n";
+	
+	str<<"\tret ";
+	emit_class_name(IO);
+	str<<"* %this\n";
+	
+	str<<"}\n";
 }
 
 void CgenClassTable::emit_constructor(CgenNode *class_node) {
@@ -1259,6 +1286,8 @@ void CgenClassTable::code()
   
   //declare strings for printf
   str<<"@.str_int = private unnamed_addr constant [3 x i8] c\"%d\\00\", align 1\n";
+  str<<"@.str_string = private unnamed_addr constant [3 x i8] c\"%s\\00\", align 1\n";
+  
   
   //declare empty string, for use in string constructor
   str<<"@.str0 = private unnamed_addr constant [1 x i8] c\"\\00\", align 1\n";
