@@ -990,7 +990,7 @@ void CgenClassTable::emit_constructor(CgenNode *class_node) {
 	//convert to parent and call its constructor
 	str<<"\t%"<<(parent_obj=new_reg())<<" = bitcast ";
 	emit_class_name(class_node->get_name());
-	str<<"* "<<this_val_ptr<<" to ";
+	str<<"* %"<<this_val_ptr<<" to ";
 	emit_class_name(class_node->get_parentnd()->get_name());
 	str<<"*\n";
 	
@@ -1025,6 +1025,198 @@ void CgenClassTable::emit_constructor(CgenNode *class_node) {
 	str<<"\tret void\n}\n\n";
 }
 
+void CgenClassTable::emit_basic_constructors() {
+	
+	reg obj_ptr, this_val_ptr, parent_obj, val_ptr;
+	
+	//Object class
+	str<<"define linkonce_odr void ";
+	emit_constructor_name(Object);
+	str<<"(";
+	emit_class_name(Object);
+	str<<"* %this) unnamed_addr align 2 {\n\tret void\n}\n";
+	
+	//IO class
+	reset_cur_register();
+	str<<"define linkonce_odr void ";
+	emit_constructor_name(IO);
+	str<<"(";
+	emit_class_name(IO);
+	str<<"* %this) unnamed_addr align 2 {\n";
+	
+	str<<"\t%"<<(obj_ptr=new_reg())<<" = alloca ";
+	emit_class_name(IO);
+	str<<"*, align 8\n";
+	
+	str<<"\tstore ";
+	emit_class_name(IO);
+	str<<"* %this, ";
+	emit_class_name(IO);
+	str<<"** %"<<obj_ptr<<", align 8\n";
+	
+	str<<"\t%"<<(this_val_ptr=new_reg())<<" = load ";
+	emit_class_name(IO);;
+	str<<"** %"<<obj_ptr<<"\n";
+	
+	//convert to parent and call its constructor
+	str<<"\t%"<<(parent_obj=new_reg())<<" = bitcast ";
+	emit_class_name(IO);
+	str<<"* %"<<this_val_ptr<<" to ";
+	emit_class_name(Object);
+	str<<"*\n";
+	
+	str<<"\tcall void ";
+	emit_constructor_name(Object);
+	str<<"(";
+	emit_class_name(Object);
+	str<<"* %"<<parent_obj<<")\n";
+
+	str<<"\tret void\n}\n";
+	
+	//Int class
+	reset_cur_register();
+	str<<"define linkonce_odr void ";
+	emit_constructor_name(Int);
+	str<<"(";
+	emit_class_name(Int);
+	str<<"* %this) unnamed_addr align 2 {\n";
+	
+	str<<"\t%"<<(obj_ptr=new_reg())<<" = alloca ";
+	emit_class_name(Int);
+	str<<"*, align 8\n";
+	
+	str<<"\tstore ";
+	emit_class_name(Int);
+	str<<"* %this, ";
+	emit_class_name(Int);
+	str<<"** %"<<obj_ptr<<", align 8\n";
+	
+	str<<"\t%"<<(this_val_ptr=new_reg())<<" = load ";
+	emit_class_name(Int);;
+	str<<"** %"<<obj_ptr<<"\n";
+	
+	//convert to parent and call its constructor
+	str<<"\t%"<<(parent_obj=new_reg())<<" = bitcast ";
+	emit_class_name(Int);
+	str<<"* %"<<this_val_ptr<<" to ";
+	emit_class_name(Object);
+	str<<"*\n";
+	
+	str<<"\tcall void ";
+	emit_constructor_name(Object);
+	str<<"(";
+	emit_class_name(Object);
+	str<<"* %"<<parent_obj<<")\n";
+	
+	str<<"\t%"<<(val_ptr=new_reg())<<" = getelementptr inbounds ";
+	emit_class_name(Int);
+	str<<"* %"<<this_val_ptr<<", i32 0, i32 1\n";
+	
+	str<<"\tstore i32 0, i32* %"<<val_ptr<<", align 4\n";
+	
+	str<<"\tret void\n}\n";
+	
+	//Bool class
+	reset_cur_register();
+	str<<"define linkonce_odr void ";
+	emit_constructor_name(Bool);
+	str<<"(";
+	emit_class_name(Bool);
+	str<<"* %this) unnamed_addr align 2 {\n";
+	
+	str<<"\t%"<<(obj_ptr=new_reg())<<" = alloca ";
+	emit_class_name(Bool);
+	str<<"*, align 8\n";
+	
+	str<<"\tstore ";
+	emit_class_name(Bool);
+	str<<"* %this, ";
+	emit_class_name(Bool);
+	str<<"** %"<<obj_ptr<<", align 8\n";
+	
+	str<<"\t%"<<(this_val_ptr=new_reg())<<" = load ";
+	emit_class_name(Bool);;
+	str<<"** %"<<obj_ptr<<"\n";
+	
+	//convert to parent and call its constructor
+	str<<"\t%"<<(parent_obj=new_reg())<<" = bitcast ";
+	emit_class_name(Bool);
+	str<<"* %"<<this_val_ptr<<" to ";
+	emit_class_name(Object);
+	str<<"*\n";
+	
+	str<<"\tcall void ";
+	emit_constructor_name(Object);
+	str<<"(";
+	emit_class_name(Object);
+	str<<"* %"<<parent_obj<<")\n";
+	
+	str<<"\t%"<<(val_ptr=new_reg())<<" = getelementptr inbounds ";
+	emit_class_name(Bool);
+	str<<"* %"<<this_val_ptr<<", i32 0, i32 1\n";
+	
+	str<<"\tstore i8 0, i8* %"<<val_ptr<<", align 1\n";
+	
+	str<<"\tret void\n}\n";
+	
+	//String class
+	reset_cur_register();
+	str<<"define linkonce_odr void ";
+	emit_constructor_name(Str);
+	str<<"(";
+	emit_class_name(Str);
+	str<<"* %this) unnamed_addr align 2 {\n";
+	
+	str<<"\t%"<<(obj_ptr=new_reg())<<" = alloca ";
+	emit_class_name(Str);
+	str<<"*, align 8\n";
+	
+	str<<"\tstore ";
+	emit_class_name(Str);
+	str<<"* %this, ";
+	emit_class_name(Str);
+	str<<"** %"<<obj_ptr<<", align 8\n";
+	
+	str<<"\t%"<<(this_val_ptr=new_reg())<<" = load ";
+	emit_class_name(Str);;
+	str<<"** %"<<obj_ptr<<"\n";
+	
+	//convert to parent and call its constructor
+	str<<"\t%"<<(parent_obj=new_reg())<<" = bitcast ";
+	emit_class_name(Str);
+	str<<"* %"<<this_val_ptr<<" to ";
+	emit_class_name(Object);
+	str<<"*\n";
+	
+	str<<"\tcall void ";
+	emit_constructor_name(Object);
+	str<<"(";
+	emit_class_name(Object);
+	str<<"* %"<<parent_obj<<")\n";
+	
+	str<<"\t%"<<(val_ptr=new_reg())<<" = getelementptr inbounds ";
+	emit_class_name(Str);
+	str<<"* %"<<this_val_ptr<<", i32 0, i32 1\n";
+	
+	str<<"\tcall void ";
+	emit_constructor_name(Int);
+	str<<"(";
+	emit_class_name(Int);
+	str<<"* %"<<val_ptr<<")\n";
+	
+	str<<"\t%"<<(val_ptr=new_reg())<<" = getelementptr inbounds ";
+	emit_class_name(Str);
+	str<<"* %"<<this_val_ptr<<", i32 0, i32 2\n";
+	
+	reg str_ptr;
+	
+	str<<"\t%"<<(str_ptr=new_reg())<<" = load i8** %"<<val_ptr<<", align 8\n";
+	str<<"\tcall i8* @strcpy(i8* %"<<str_ptr<<", i8* getelementptr inbounds ([1 x i8]* @.str0, i32 0, i32 0))\n";
+	
+	str<<"\tret void\n}\n";
+	
+}
+
 void CgenClassTable::code()
 {
   if(cgen_debug)	cout<<"coding llvm data"<<endl;
@@ -1042,6 +1234,9 @@ void CgenClassTable::code()
   str<<"%class.Int = type { %class.Object, i32 }\n";
   str<<"%class.IO = type { %class.Object }\n";
   str<<"%class.Object = type { i8 }\n\n";
+  
+  //declare empty string, for use in string constructor
+  str<<"@.str0 = private unnamed_addr constant [1 x i8] c\"\\00\", align 1\n";
   
   //get all strings from the string table into the map
   for(int i=stringtable.next(stringtable.first()); stringtable.more(i); i=stringtable.next(i)) {
@@ -1070,6 +1265,7 @@ void CgenClassTable::code()
 		emit_constructor(cur_node);
   }
   
+  emit_basic_constructors();
   
   //generate inbuilt declaration
   str<<"\n\n";

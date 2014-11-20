@@ -56,6 +56,7 @@ public:
    void emit_type(Symbol);
    void emit_method_call(Symbol, Symbol);
    
+   void emit_basic_constructors();
    void emit_constructor(CgenNode*);
    void emit_method_definition(Symbol, method_class*);
    void emit_methods_definitions(CgenNode*);
