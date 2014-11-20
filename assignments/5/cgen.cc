@@ -1296,7 +1296,13 @@ void CgenClassTable::code()
   for(int i=stringtable.next(stringtable.first()); stringtable.more(i); i=stringtable.next(i)) {
 	  StringEntry *cur_string=stringtable.lookup(i);
 	  strings.insert(std::pair<StringEntry*, int>(cur_string, i));
-	  str<<"@.str"<<i<<" = private unnamed_addr constant ["<<(cur_string->get_len()+1)<<" x i8] c\""<<cur_string->get_string()<<"\\00\", align 1\n";
+	  str<<"@.str"<<i<<" = private unnamed_addr constant ["<<(cur_string->get_len()+1)<<" x i8] c\"";
+	  for(int j=0;j<cur_string->get_len();j++)
+		if(cur_string->get_string()[j]=='\"')
+			str<<"\\22";
+		else
+			str<<cur_string->get_string()[j];
+	  str<<"\\00\", align 1\n";
   }
   
   str<<"\n";
