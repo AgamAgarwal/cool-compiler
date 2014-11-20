@@ -954,6 +954,37 @@ void CgenClassTable::emit_methods_definitions(CgenNode *class_node) {
 	}
 }
 
+void CgenClassTable::emit_basic_methods() {
+	
+	reg val_ptr, val;
+	
+	//IO.out_int
+	reset_cur_register();
+	str<<"\ndefine linkonce_odr ";
+	emit_class_name(IO);
+	str<<"* ";
+	emit_method_name(IO, out_int);
+	str<<"(";
+	emit_class_name(IO);
+	str<<"* %this, ";
+	emit_class_name(Int);
+	str<<"* %i) align 2 {\n";
+	
+	str<<"\t%"<<(val_ptr=new_reg())<<" = getelementptr inbounds ";
+	emit_class_name(Int);
+	str<<"* %i, i32 0, i32 1\n";
+	
+	str<<"\t%"<<(val=new_reg())<<" = load i32* %"<<val_ptr<<", align 4\n";
+	
+	str<<"\t%"<<new_reg()<<" = call i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([3 x i8]* @.str_int, i32 0, i32 0), i32 %"<<val<<")\n";
+	
+	str<<"\tret ";
+	emit_class_name(IO);
+	str<<"* %this\n";
+	
+	str<<"}\n";
+}
+
 void CgenClassTable::emit_constructor(CgenNode *class_node) {
 	str<<"define linkonce_odr void ";
 	emit_constructor_name(class_node->get_name());
@@ -1226,6 +1257,9 @@ void CgenClassTable::code()
   str<<"%class.IO = type { %class.Object }\n";
   str<<"%class.Object = type { i8 }\n\n";
   
+  //declare strings for printf
+  str<<"@.str_int = private unnamed_addr constant [3 x i8] c\"%d\\00\", align 1\n";
+  
   //declare empty string, for use in string constructor
   str<<"@.str0 = private unnamed_addr constant [1 x i8] c\"\\00\", align 1\n";
   
@@ -1248,6 +1282,7 @@ void CgenClassTable::code()
 		emit_methods_definitions(cur_node);
   }
   
+  emit_basic_methods();
   
   //generate all constructors
   for(List<CgenNode> *l=nds; l!=NULL; l=l->tl()) {
@@ -1262,6 +1297,8 @@ void CgenClassTable::code()
   str<<"\n\n";
   str<<"declare noalias i8* @_Znwm(i64)\n";
   str<<"declare i8* @strcpy(i8*, i8*)\n";
+  str<<"declare i32 @printf(i8*, ...)\n";
+  
   /*
   if (cgen_debug) cout << "coding global data" << endl;
   code_global_data();
