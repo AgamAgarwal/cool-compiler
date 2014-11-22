@@ -2055,6 +2055,72 @@ void eq_class::code(ostream &s) {
 }
 
 void leq_class::code(ostream &s) {
+	//code e1
+	e1->code(s);
+	
+	//get register number of first 'x'
+	reg x=last_reg();
+	
+	//code e2
+	e2->code(s);
+	
+	//get register number of second 'y'
+	reg y=last_reg();
+	
+	reg x_ptr, x_value, y_ptr, y_value, res_value, res_obj, res_ptr, converted_res_val, res_obj_ptr, final_res;
+	
+	//get element pointer to value of first obj
+	s<<"\t%"<<(x_ptr=new_reg())<<" = getelementptr inbounds ";
+	cgct->emit_class_name(Int);
+	s<<"* %"<<x<<", i32 0, i32 1\n";
+	
+	//load value from the pointer of first
+	s<<"\t%"<<(x_value=new_reg())<<" = load i32* %"<<x_ptr<<", align 4\n";
+	
+	//get element pointer to value of second obj
+	s<<"\t%"<<(y_ptr=new_reg())<<" = getelementptr inbounds ";
+	cgct->emit_class_name(Int);
+	s<<"* %"<<y<<", i32 0, i32 1\n";
+	
+	//load value from the pointer of second
+	s<<"\t%"<<(y_value=new_reg())<<" = load i32* %"<<y_ptr<<", align 4\n";
+	
+	//compare both values
+	s<<"\t%"<<(res_value=new_reg())<<" = icmp sle i32 %"<<x_value<<", %"<<y_value<<"\n";
+	
+	//allocate memory to a new Bool for result
+	s<<"\t%"<<(res_obj=new_reg())<<" = alloca ";
+	cgct->emit_class_name(Bool);
+	s<<", align 1\n";
+	
+	//get element pointer to value of result
+	s<<"\t%"<<(res_ptr=new_reg())<<" = getelementptr inbounds ";
+	cgct->emit_class_name(Bool);
+	s<<"* %"<<res_obj<<", i32 0, i32 1\n";
+	
+	//convert i1 to i8
+	s<<"\t%"<<(converted_res_val=new_reg())<<" = zext i1 %"<<res_value<<" to i8\n";
+	
+	//store converted value to resulted
+	s<<"\tstore i8 %"<<(converted_res_val)<<", i8* %"<<(res_ptr)<<", align 4\n";
+	
+	//copy final obj to last register
+	
+	//allocate a pointer and store address of final obj
+	s<<"\t%"<<(res_obj_ptr=new_reg())<<" = alloca ";
+	cgct->emit_class_name(Bool);
+	s<<"*, align 8\n";
+	
+	s<<"\tstore ";
+	cgct->emit_class_name(Bool);
+	s<<"* %"<<res_obj<<", ";
+	cgct->emit_class_name(Bool);
+	s<<"** %"<<res_obj_ptr<<", align 8\n";
+	
+	//store the value of result into last register.
+	s<<"\t%"<<(final_res=new_reg())<<" = load ";
+	cgct->emit_class_name(Bool);
+	s<<"** %"<<res_obj_ptr<<"\n";
 }
 
 void comp_class::code(ostream &s) {
