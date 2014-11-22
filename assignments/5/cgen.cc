@@ -1725,6 +1725,44 @@ void divide_class::code(ostream &s) {
 }
 
 void neg_class::code(ostream &s) {
+	reg given_obj, given_val_ptr, given_val, res_val, res_obj, res_val_ptr, res_obj_ptr, final_res;
+	
+	e1->code(s);
+	
+	given_obj=last_reg();
+	
+	s<<"\t%"<<(given_val_ptr=new_reg())<<" = getelementptr inbounds ";
+	cgct->emit_class_name(Int);
+	s<<"* %"<<given_obj<<", i32 0, i32 1\n";
+	
+	s<<"\t%"<<(given_val=new_reg())<<" = load i32* %"<<given_val_ptr<<", align 4\n";
+	
+	s<<"\t%"<<(res_val=new_reg())<<" = sub nsw i32 0, %"<<given_val<<"\n";
+	
+	s<<"\t%"<<(res_obj=new_reg())<<" = alloca ";
+	cgct->emit_class_name(Int);
+	s<<", align 4\n";
+	
+	s<<"\t%"<<(res_val_ptr=new_reg())<<" = getelementptr inbounds ";
+	cgct->emit_class_name(Int);
+	s<<"* %"<<res_obj<<", i32 0, i32 1\n";
+	
+	s<<"\tstore i32 %"<<res_val<<", i32* %"<<res_val_ptr<<", align 4\n";
+	
+	//copy the res_obj to last reg
+	s<<"\t%"<<(res_obj_ptr=new_reg())<<" = alloca ";
+	cgct->emit_class_name(Int);
+	s<<"*, align 8\n";
+	
+	s<<"store ";
+	cgct->emit_class_name(Int);
+	s<<"* %"<<res_obj<<", ";
+	cgct->emit_class_name(Int);
+	s<<"** %"<<res_obj_ptr<<", align 8\n";
+	
+	s<<"\t%"<<(final_res=new_reg())<<" = load ";
+	cgct->emit_class_name(Int);
+	s<<"** %"<<res_obj_ptr<<"\n";
 }
 
 void lt_class::code(ostream &s) {
