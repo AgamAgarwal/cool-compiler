@@ -1589,6 +1589,76 @@ void dispatch_class::code(ostream &s) {
 }
 
 void cond_class::code(ostream &s) {
+	
+	//code predicate
+	pred->code(s);
+	
+	//get predicate's Bool obj
+	reg pred_obj=last_reg();
+	
+	//get Bool obj i1 value into reg <pred>
+	reg bool_val_ptr, bool_val_i8, bool_val_i1;
+	s<<"\t%"<<(bool_val_ptr=new_reg())<<" = getelementptr inbounds %class.Bool* %"<<pred_obj<<", i32 0, i32 1\n";
+	s<<"\t%"<<(bool_val_i8=new_reg())<<" = load i8* %"<<bool_val_ptr<<", align 1\n";
+	s<<"\t%"<<(bool_val_i1=new_reg())<<" = trunc i8 %"<<bool_val_i8<<" to i1\n";
+	
+	//create pointer for result of both branches
+	s<<"\t%ifres"<<bool_val_i1<<" = alloca ";
+	cgct->emit_class_name(get_type());
+	s<<"*, align 8\n";
+	
+	//break on this boolean value to then<pred> and else<pred>
+	s<<"\tbr i1 %"<<bool_val_i1<<", label %then"<<bool_val_i1<<", label %else"<<bool_val_i1<<"\n";
+	
+	//label:then<pred>
+	s<<"then"<<bool_val_i1<<":\n";
+	//code then_exp and store result into reg ifres<pred>
+	then_exp->code(s);
+	reg then_obj_ptr, then_obj_after_cast;
+	then_obj_ptr=last_reg();
+	s<<"\t%"<<(then_obj_after_cast=new_reg())<<" = bitcast ";
+	cgct->emit_class_name(then_exp->get_type());
+	s<<"* %"<<then_obj_ptr<<" to ";
+	cgct->emit_class_name(get_type());
+	s<<"*\n";
+	
+	s<<"\tstore ";
+	cgct->emit_class_name(get_type());
+	s<<"* %"<<then_obj_after_cast<<", ";
+	cgct->emit_class_name(get_type());
+	s<<"** %ifres"<<bool_val_i1<<", align 8\n";
+	
+	//branch to fi<pred>
+	s<<"\tbr label %fi"<<bool_val_i1<<"\n";
+	
+	//label:else<pred>
+	s<<"else"<<bool_val_i1<<":\n";
+	//code else_exp and store result into reg ifres<pred>
+	else_exp->code(s);
+	reg else_obj_ptr, else_obj_after_cast;
+	else_obj_ptr=last_reg();
+	s<<"\t%"<<(else_obj_after_cast=new_reg())<<" = bitcast ";
+	cgct->emit_class_name(else_exp->get_type());
+	s<<"* %"<<else_obj_ptr<<" to ";
+	cgct->emit_class_name(get_type());
+	s<<"*\n";
+	
+	s<<"\tstore ";
+	cgct->emit_class_name(get_type());
+	s<<"* %"<<else_obj_after_cast<<", ";
+	cgct->emit_class_name(get_type());
+	s<<"** %ifres"<<bool_val_i1<<", align 8\n";
+	
+	//branch to fi<pred>
+	s<<"\tbr label %fi"<<bool_val_i1<<"\n";
+	
+	//label:fi<pred>
+	s<<"fi"<<bool_val_i1<<":\n";
+	
+	//bitcast ifres<pred> to same type and store in last register
+	s<<"\t%"<<new_reg()<<" = load ";
+	cgct->emit_class_name(get_type());
+	s<<"** %ifres"<<bool_val_i1<<", align 8\n";
 }
 
 void loop_class::code(ostream &s) {
@@ -1960,7 +2030,7 @@ void lt_class::code(ostream &s) {
 	s<<"\t%"<<(converted_res_val=new_reg())<<" = zext i1 %"<<res_value<<" to i8\n";
 	
 	//storec converted value to resulted
-	s<<"\tstore i32 %"<<(converted_res_val)<<", i32* %"<<(res_ptr)<<", align 4\n";
+	s<<"\tstore i8 %"<<(converted_res_val)<<", i8* %"<<(res_ptr)<<", align 4\n";
 	
 	//copy final obj to last register
 	
