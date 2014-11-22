@@ -1662,6 +1662,43 @@ void cond_class::code(ostream &s) {
 }
 
 void loop_class::code(ostream &s) {
+	reg pred_no=new_reg();
+	
+	//branch to label pred_no
+	s<<"\tbr label %"<<pred_no<<"\n";
+	
+	//label pred_no
+	s<<"; <label>:"<<pred_no<<"\n";
+	//code predicate
+	pred->code(s);
+	
+	//get predicate's Bool obj
+	reg pred_obj=last_reg();
+	
+	//get Bool obj i1 value into reg <pred>
+	reg bool_val_ptr, bool_val_i8, bool_val_i1;
+	s<<"\t%"<<(bool_val_ptr=new_reg())<<" = getelementptr inbounds %class.Bool* %"<<pred_obj<<", i32 0, i32 1\n";
+	s<<"\t%"<<(bool_val_i8=new_reg())<<" = load i8* %"<<bool_val_ptr<<", align 1\n";
+	s<<"\t%"<<(bool_val_i1=new_reg())<<" = trunc i8 %"<<bool_val_i8<<" to i1\n";
+	
+	//branch to labels loop<pred_no> and pool<pred_no> based on the i1 value
+	s<<"\tbr i1 %"<<bool_val_i1<<", label %loop"<<pred_no<<", label %pool"<<pred_no<<"\n";
+	
+	//label loop<pred_no>
+	s<<"loop"<<pred_no<<":\n";
+	
+	//code body
+	body->code(s);
+	
+	//branch to label pred_no
+	s<<"\tbr label %"<<pred_no<<"\n";
+	
+	//label pool<pred_no>
+	s<<"pool"<<pred_no<<":\n";
+	
+	s<<"\t%"<<new_reg()<<" = alloca ";
+	cgct->emit_class_name(Object);
+	s<<", align 4\n";
 }
 
 void typcase_class::code(ostream &s) {
