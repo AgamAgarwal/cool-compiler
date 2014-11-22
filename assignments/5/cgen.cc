@@ -957,7 +957,7 @@ void CgenClassTable::emit_methods_definitions(CgenNode *class_node) {
 void CgenClassTable::emit_basic_methods() {
 	
 	reg val_ptr, val;
-	
+	{
 	//IO.out_int
 	reset_cur_register();
 	str<<"\ndefine linkonce_odr ";
@@ -983,8 +983,9 @@ void CgenClassTable::emit_basic_methods() {
 	str<<"* %this\n";
 	
 	str<<"}\n";
+	}
 	
-	
+	{
 	//IO.out_string
 	reset_cur_register();
 	str<<"\ndefine linkonce_odr ";
@@ -1010,6 +1011,53 @@ void CgenClassTable::emit_basic_methods() {
 	str<<"* %this\n";
 	
 	str<<"}\n";
+	}
+	
+	{
+	//IO.in_int
+	reset_cur_register();
+	str<<"\ndefine linkonce_odr ";
+	emit_class_name(Int);
+	str<<"* ";
+	emit_method_name(IO, in_int);
+	str<<"(";
+	emit_class_name(IO);
+	str<<"* %this) align 2 {\n";
+	
+	reg new_obj, new_val_ptr, new_obj_ptr, final_res_ptr, new_obj_i8_ptr, final_res;
+	
+	str<<"\t%"<<(new_obj=new_reg())<<" = alloca ";
+	emit_class_name(Int);
+	str<<", align 4\n";
+	
+	str<<"\t%"<<(new_val_ptr=new_reg())<<" = getelementptr inbounds ";
+	emit_class_name(Int);
+	str<<"* %"<<new_obj<<", i32 0, i32 1\n";
+	
+	str<<"\t%"<<new_reg()<<" = call i32 (i8*, ...)* @scanf(i8* getelementptr inbounds ([3 x i8]* @.str_int, i32 0, i32 0), i32* %"<<new_val_ptr<<")\n";
+	
+	str<<"\t%"<<(new_obj_ptr=new_reg())<<" = alloca ";
+	emit_class_name(Int);
+	str<<"*, align 8\n";
+	
+	str<<"\t%"<<(final_res_ptr=new_reg())<<" = call noalias i8* @_Znwm(i64 8)\n";
+	
+	str<<"\t%"<<(new_obj_i8_ptr=new_reg())<<" = bitcast ";
+	emit_class_name(Int);
+	str<<"* %"<<new_obj<<" to i8*\n";
+	
+	str<<"\tcall void @llvm.memcpy.p0i8.p0i8.i64(i8* %"<<final_res_ptr<<", i8* %"<<new_obj_i8_ptr<<", i64 8, i32 1, i1 false)\n";
+	
+	str<<"\t%"<<(final_res=new_reg())<<" = bitcast i8* %"<<final_res_ptr<<" to ";
+	emit_class_name(Int);
+	str<<"*\n";
+	
+	str<<"\tret ";
+	emit_class_name(Int);
+	str<<"* %"<<final_res<<"\n";
+	
+	str<<"}\n";
+	}
 }
 
 void CgenClassTable::emit_constructor(CgenNode *class_node) {
@@ -1333,7 +1381,8 @@ void CgenClassTable::code()
   str<<"declare noalias i8* @_Znwm(i64)\n";
   str<<"declare i8* @strcpy(i8*, i8*)\n";
   str<<"declare i32 @printf(i8*, ...)\n";
-  
+  str<<"declare i32 @scanf(i8*, ...)\n";
+  str<<"declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture, i8* nocapture readonly, i64, i32, i1)\n";
   /*
   if (cgen_debug) cout << "coding global data" << endl;
   code_global_data();
