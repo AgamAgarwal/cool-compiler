@@ -1024,7 +1024,7 @@ void CgenClassTable::emit_basic_methods() {
 	emit_class_name(IO);
 	str<<"* %this) align 2 {\n";
 	
-	reg new_obj, new_val_ptr, new_obj_ptr, final_res_ptr, new_obj_i8_ptr, final_res;
+	reg new_obj, new_val_ptr, new_obj_ptr, final_res_ptr, final_res;
 	
 	str<<"\t%"<<(new_obj=new_reg())<<" = alloca ";
 	emit_class_name(Int);
@@ -1036,17 +1036,13 @@ void CgenClassTable::emit_basic_methods() {
 	
 	str<<"\t%"<<new_reg()<<" = call i32 (i8*, ...)* @scanf(i8* getelementptr inbounds ([3 x i8]* @.str_int, i32 0, i32 0), i32* %"<<new_val_ptr<<")\n";
 	
-	str<<"\t%"<<(new_obj_ptr=new_reg())<<" = alloca ";
-	emit_class_name(Int);
-	str<<"*, align 8\n";
-	
 	str<<"\t%"<<(final_res_ptr=new_reg())<<" = call noalias i8* @_Znwm(i64 8)\n";
 	
-	str<<"\t%"<<(new_obj_i8_ptr=new_reg())<<" = bitcast ";
+	str<<"\t%"<<(new_obj_ptr=new_reg())<<" = bitcast ";
 	emit_class_name(Int);
 	str<<"* %"<<new_obj<<" to i8*\n";
 	
-	str<<"\tcall void @llvm.memcpy.p0i8.p0i8.i64(i8* %"<<final_res_ptr<<", i8* %"<<new_obj_i8_ptr<<", i64 8, i32 1, i1 false)\n";
+	str<<"\tcall void @llvm.memcpy.p0i8.p0i8.i64(i8* %"<<final_res_ptr<<", i8* %"<<new_obj_ptr<<", i64 8, i32 1, i1 false)\n";
 	
 	str<<"\t%"<<(final_res=new_reg())<<" = bitcast i8* %"<<final_res_ptr<<" to ";
 	emit_class_name(Int);
@@ -1055,6 +1051,52 @@ void CgenClassTable::emit_basic_methods() {
 	str<<"\tret ";
 	emit_class_name(Int);
 	str<<"* %"<<final_res<<"\n";
+	
+	str<<"}\n";
+	}
+	
+	{
+	//IO.in_string
+	reset_cur_register();
+	str<<"\ndefine linkonce_odr ";
+	emit_class_name(Str);
+	str<<"* ";
+	emit_method_name(IO, in_string);
+	str<<"(";
+	emit_class_name(IO);
+	str<<"* %this) align 2 {\n";
+	
+	reg in_string, in_size_32_ptr, in_size_32_val, in_size_64, heap_string, heap_obj, heap_string_obj, heap_string_ptr;
+	
+	str<<"\t%"<<(in_string=new_reg())<<" = alloca i8, align 8\n";
+	
+	str<<"\t%"<<(in_size_32_ptr=new_reg())<<" = alloca i32, align 8\n";
+	
+	str<<"\t%"<<new_reg()<<" = call i32 (i8*, ...)* @scanf(i8* getelementptr inbounds ([5 x i8]* @.str_string_in, i32 0, i32 0), i8* %"<<in_string<<", i32* %"<<in_size_32_ptr<<")\n";
+	
+	str<<"\t%"<<(in_size_32_val=new_reg())<<" = load i32* %"<<in_size_32_ptr<<", align 4\n";
+	
+	str<<"\t%"<<(in_size_64=new_reg())<<" = zext i32 %"<<in_size_32_val<<" to i64\n";
+	
+	str<<"\t%"<<(heap_string=new_reg())<<" = call noalias i8* @_Znwm(i64 %"<<in_size_64<<")\n";
+	
+	str<<"\tcall void @llvm.memcpy.p0i8.p0i8.i64(i8* %"<<heap_string<<", i8* %"<<in_string<<", i64 %"<<in_size_64<<", i32 1, i1 false)\n";
+	
+	str<<"\t%"<<(heap_obj=new_reg())<<" = call noalias i8* @_Znwm(i64 16)\n";
+	
+	str<<"\t%"<<(heap_string_obj=new_reg())<<" = bitcast i8* %"<<heap_obj<<" to ";
+	emit_class_name(Str);
+	str<<"*\n";
+	
+	str<<"\t%"<<(heap_string_ptr=new_reg())<<" = getelementptr inbounds ";
+	emit_class_name(Str);
+	str<<"* %"<<heap_string_obj<<", i32 0, i32 2\n";
+	
+	str<<"\tstore i8* %"<<heap_string<<", i8** %"<<heap_string_ptr<<", align 8\n";
+	
+	str<<"\tret ";
+	emit_class_name(Str);
+	str<<"* %"<<heap_string_obj<<"\n";
 	
 	str<<"}\n";
 	}
@@ -1335,6 +1377,7 @@ void CgenClassTable::code()
   //declare strings for printf
   str<<"@.str_int = private unnamed_addr constant [3 x i8] c\"%d\\00\", align 1\n";
   str<<"@.str_string = private unnamed_addr constant [3 x i8] c\"%s\\00\", align 1\n";
+  str<<"@.str_string_in = private unnamed_addr constant [5 x i8] c\"%s%n\\00\", align 1\n";
   
   
   //declare empty string, for use in string constructor
