@@ -57,6 +57,7 @@ public:
    method_class* cur_method;
    
    reg get_reg_from_object(Symbol);
+   bool update_object_reg_map(Symbol, reg);
    
    int get_class_size(Symbol);
    int get_class_size(CgenNode*);

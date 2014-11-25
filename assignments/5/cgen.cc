@@ -916,6 +916,16 @@ CgenNode* CgenClassTable::find_attr_enclosing_class(Symbol class_name, Symbol at
 	return NULL;	//never reached
 }
 
+bool CgenClassTable::update_object_reg_map(Symbol obj_name, reg new_register) {
+	for(int i=object_reg_map.size()-1; i>=0; i--) {
+		if(object_reg_map[i].first==obj_name) {
+			object_reg_map[i].second=new_register;
+			return true;
+		}
+	}
+	return false;
+}
+
 void CgenClassTable::emit_method_name(Symbol class_name, Symbol method_name) {
 	str<<"@_ZN"<<class_name->get_len()<<class_name<<method_name->get_len()<<method_name;
 }
@@ -1606,6 +1616,47 @@ CgenNode::CgenNode(Class_ nd, Basicness bstatus, CgenClassTableP ct) :
 //*****************************************************************
 
 void assign_class::code(ostream &s) {
+	
+	expr->code(s);
+	
+	reg expr_res=last_reg();
+	
+	//update object_reg_map, if present
+	if(cgct->update_object_reg_map(name, expr_res))
+		return;
+	
+	//search in class hierarchy
+	CgenNode *enclosing_class=cgct->find_attr_enclosing_class(cgct->cur_method->get_enclosing_class()->get_name(), name);
+	
+	int i;
+	Features features=enclosing_class->features;
+	for(i=features->first(); features->more(i); i=features->next(i))
+		if(features->nth(i)->is_attr() && ((attr_class*)features->nth(i))->name==name)
+			break;
+	
+	reg casted_this, val_ptr, casted_expr_res;
+	
+	s<<"\t%"<<(casted_expr_res=new_reg())<<" = bitcast ";
+	cgct->emit_class_name(expr->get_type());
+	s<<"* %"<<expr_res<<" to ";
+	cgct->emit_class_name(((attr_class*)features->nth(i))->type_decl);
+	s<<"*\n";
+	
+	s<<"\t%"<<(casted_this=new_reg())<<" = bitcast ";
+	cgct->emit_class_name(cgct->cur_method->get_enclosing_class()->get_name());
+	s<<"* %this to ";
+	cgct->emit_class_name(enclosing_class->get_name());
+	s<<"*\n";
+	
+	s<<"\t%"<<(val_ptr=new_reg())<<" = getelementptr inbounds ";
+	cgct->emit_class_name(enclosing_class->get_name());
+	s<<"* %"<<casted_this<<", i32 0, i32 "<<(i+1)<<"\n";
+	
+	s<<"\tstore ";
+	cgct->emit_class_name(((attr_class*)features->nth(i))->type_decl);
+	s<<"* %"<<casted_expr_res<<", ";
+	cgct->emit_class_name(((attr_class*)features->nth(i))->type_decl);
+	s<<"** %"<<val_ptr<<", align 8\n";
 }
 
 void static_dispatch_class::code(ostream &s) {
