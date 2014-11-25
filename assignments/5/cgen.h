@@ -50,6 +50,9 @@ public:
    
    std::map<StringEntry*, int> strings;
    
+   int get_class_size(Symbol);
+   int get_class_size(CgenNode*);
+   
    void emit_main_method();
    void emit_class_declaration(CgenNode*);
    void emit_class_name(Symbol);

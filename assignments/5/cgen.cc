@@ -828,6 +828,46 @@ void CgenNode::set_parentnd(CgenNodeP p)
   parentnd = p;
 }
 
+int CgenClassTable::get_class_size(Symbol class_name) {
+	
+	if(class_name==Object)
+		return 1;
+	if(class_name==Str)
+		return 17;
+	if(class_name==Bool)
+		return 2;
+	if(class_name==Int)
+		return 5;
+	if(class_name==IO)
+		return 1;
+	
+	
+	for(List<CgenNode> *l=nds; l!=NULL; l=l->tl()) {
+	  CgenNode *cur_node=l->hd();
+	  if(cur_node->get_name()==class_name) {
+		 return get_class_size(cur_node);
+	  }
+	}
+	return 0;	//unreachable
+}
+
+int CgenClassTable::get_class_size(CgenNode* class_node) {
+	
+	if(class_node->get_name()==Object || class_node->get_name()==IO)
+		return 1;
+	
+	int size=0;
+	
+	//iterate over features, for each attribute, add 8
+	for(int i=class_node->features->first(); class_node->features->more(i); i=class_node->features->next(i))
+		if(class_node->features->nth(i)->is_attr())
+			size+=8;
+	
+	size+=get_class_size(class_node->get_parentnd());
+	
+	return size;
+}
+
 /* finds a method in the ancestor list */
 method_class* CgenClassTable::find_method(Symbol class_name, Symbol method_name) {
 	
@@ -882,6 +922,7 @@ void CgenClassTable::emit_class_declaration(CgenNode *class_node) {
 		if(f->is_attr()) {
 			str<<", ";
 			emit_class_name(((attr_class*)f)->get_type_decl());
+			str<<"*";
 		}
 	}
 	str<<" }\n";
@@ -1154,11 +1195,38 @@ void CgenClassTable::emit_constructor(CgenNode *class_node) {
 		emit_class_name(class_node->get_name());
 		str<<"* %"<<this_val_ptr<<", i32 0, i32 "<<index<<"\n";
 		
-		str<<"\tcall void ";
-		emit_constructor_name(cur_attr->get_type_decl());
-		str<<"(";
-		emit_class_name(cur_attr->get_type_decl());
-		str<<"* %"<<cur_attr_ptr<<")\n";
+		if(cur_attr->init->get_type()!=NULL) { //if init is given
+			cur_attr->init->code(str);
+			
+			reg init_val=last_reg(), init_casted_val;
+			
+			str<<"\t%"<<(init_casted_val=new_reg())<<" = bitcast ";
+			emit_class_name(cur_attr->init->get_type());
+			str<<"* %"<<init_val<<" to ";
+			emit_class_name(cur_attr->get_type_decl());
+			str<<"*\n";
+			
+			//store casted last reg value into this attribute's pointer
+			str<<"\tstore ";
+			emit_class_name(cur_attr->get_type_decl());
+			str<<"* %"<<init_casted_val<<", ";
+			emit_class_name(cur_attr->get_type_decl());
+			str<<"** %"<<cur_attr_ptr<<", align 8\n";
+		} else {	//if no init is given
+			if(cur_attr->get_type_decl()==Int || cur_attr->get_type_decl()==Bool || cur_attr->get_type_decl()==Str) {
+				str<<"\tcall void ";
+				emit_constructor_name(cur_attr->get_type_decl());
+				str<<"(";
+				emit_class_name(cur_attr->get_type_decl());
+				str<<"* %"<<cur_attr_ptr<<")\n";
+			} else {
+				str<<"\tstore ";
+				emit_class_name(cur_attr->get_type_decl());
+				str<<"* null, ";
+				emit_class_name(cur_attr->get_type_decl());
+				str<<"** %"<<cur_attr_ptr<<", align 8\n";
+			}
+		}
 	}
 	
 	str<<"\tret void\n}\n\n";
@@ -2280,19 +2348,21 @@ void bool_const_class::code(ostream& s)
 }
 
 void new__class::code(ostream &s) {
-	reg new_obj=new_reg();
+	reg new_obj, casted_new_obj;
 	
-	//allocate memory
-	s<<"\t%"<<new_obj<<" = alloca ";
+	//allocate memory from heap
+	s<<"\t%"<<(new_obj=new_reg())<<" = call i8* @_Znwm(i64 "<<cgct->get_class_size(type_name)<<")\n";
+	
+	s<<"\t%"<<(casted_new_obj=new_reg())<<" = bitcast i8* %"<<new_obj<<" to ";
 	cgct->emit_class_name(type_name);
-	s<<", align 8\n";
+	s<<"*\n";
 	
 	//call constructor
 	s<<"\tcall void ";
 	cgct->emit_constructor_name(type_name);
 	s<<"(";
 	cgct->emit_class_name(type_name);
-	s<<"* %"<<new_obj<<")\n";
+	s<<"* %"<<casted_new_obj<<")\n";
 }
 
 void isvoid_class::code(ostream &s) {
