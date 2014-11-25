@@ -1002,7 +1002,20 @@ void CgenClassTable::emit_method_definition(Symbol class_name, method_class* met
 	
 	str<<") align 2 {\n";
 	reset_cur_register();
-	method->expr->code(str);//TODO: print function contents
+	
+	//get all formals into temp registers
+	for(int i=method->formals->first(); method->formals->more(i); i=method->formals->next(i)) {
+		formal_class *formal=(formal_class*)method->formals->nth(i);
+		str<<"\t%"<<new_reg()<<" = bitcast ";
+		emit_class_name(formal->type_decl);
+		str<<"* %"<<formal->name<<" to ";
+		emit_class_name(formal->type_decl);
+		str<<"*\n";
+		
+		object_reg_map.push_back(std::make_pair(formal->name, last_reg()));
+	}
+	
+	method->expr->code(str);
 	
 	
 	reg last_result=last_reg(), converted_result=new_reg();
@@ -1016,6 +1029,9 @@ void CgenClassTable::emit_method_definition(Symbol class_name, method_class* met
 	emit_class_name(method->return_type);
 	str<<"* %"<<converted_result<<"\n";
 	str<<"}\n";
+	
+	for(int i=method->formals->first(); method->formals->more(i); i=method->formals->next(i))
+		object_reg_map.pop_back();
 }
 
 void CgenClassTable::emit_methods_definitions(CgenNode *class_node) {
@@ -2468,30 +2484,12 @@ void no_expr_class::code(ostream &s) {
 
 void object_class::code(ostream &s) {
 	
-	//search in let bindings object_reg_map
+	//search in object_reg_map
 	reg let_reg=cgct->get_reg_from_object(name);
 	if(let_reg!=-1) {
 		s<<"\t%"<<new_reg()<<" = bitcast ";
 		cgct->emit_class_name(get_type());
 		s<<"* %"<<let_reg<<" to ";
-		cgct->emit_class_name(get_type());
-		s<<"*\n";
-		return;
-	}
-	
-	//search in function formals
-	bool found_in_formals=false;
-	Formals formals=cgct->cur_method->formals;
-	for(int i=formals->first(); formals->more(i); i=formals->next(i))
-		if(((formal_class*)formals->nth(i))->name==name) {
-			found_in_formals=true;
-			break;
-		}
-	
-	if(found_in_formals) {
-		s<<"\t%"<<new_reg()<<" = bitcast ";
-		cgct->emit_class_name(get_type());
-		s<<"* %"<<name<<" to ";
 		cgct->emit_class_name(get_type());
 		s<<"*\n";
 		return;
