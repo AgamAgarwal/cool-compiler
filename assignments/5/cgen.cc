@@ -2528,6 +2528,52 @@ void new__class::code(ostream &s) {
 }
 
 void isvoid_class::code(ostream &s) {
+	//code e1
+	e1->code(s);
+	
+	//get register number of first 'x'
+	reg x=last_reg();
+	
+	reg res_value, res_obj, res_ptr, converted_res_val, res_obj_ptr, final_res;
+	
+	//compare both values
+	s<<"\t%"<<(res_value=new_reg())<<" = icmp eq ";
+	cgct->emit_class_name(e1->get_type());
+	s<<"* %"<<x<<", null\n";
+	
+	//allocate memory to a new Bool for result
+	s<<"\t%"<<(res_obj=new_reg())<<" = alloca ";
+	cgct->emit_class_name(Bool);
+	s<<", align 1\n";
+	
+	//get element pointer to value of result
+	s<<"\t%"<<(res_ptr=new_reg())<<" = getelementptr inbounds ";
+	cgct->emit_class_name(Bool);
+	s<<"* %"<<res_obj<<", i32 0, i32 1\n";
+	
+	//convert i1 to i8
+	s<<"\t%"<<(converted_res_val=new_reg())<<" = zext i1 %"<<res_value<<" to i8\n";
+	
+	//storec converted value to resulted
+	s<<"\tstore i8 %"<<(converted_res_val)<<", i8* %"<<(res_ptr)<<", align 4\n";
+	
+	//copy final obj to last register
+	
+	//allocate a pointer and store address of final obj
+	s<<"\t%"<<(res_obj_ptr=new_reg())<<" = alloca ";
+	cgct->emit_class_name(Bool);
+	s<<"*, align 8\n";
+	
+	s<<"\tstore ";
+	cgct->emit_class_name(Bool);
+	s<<"* %"<<res_obj<<", ";
+	cgct->emit_class_name(Bool);
+	s<<"** %"<<res_obj_ptr<<", align 8\n";
+	
+	//store the value of result into last register.
+	s<<"\t%"<<(final_res=new_reg())<<" = load ";
+	cgct->emit_class_name(Bool);
+	s<<"** %"<<res_obj_ptr<<"\n";
 }
 
 void no_expr_class::code(ostream &s) {
