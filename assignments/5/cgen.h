@@ -54,6 +54,10 @@ public:
    std::map<StringEntry*, int> strings;
    std::vector<std::pair<Symbol, reg> > object_reg_map;
    
+   method_class* cur_method;
+   
+   reg get_reg_from_object(Symbol);
+   
    int get_class_size(Symbol);
    int get_class_size(CgenNode*);
    
@@ -71,6 +75,7 @@ public:
    void emit_constructor_name(Symbol);
    void emit_method_name(Symbol, Symbol);
    
+   CgenNode* find_attr_enclosing_class(Symbol, Symbol);
    method_class* find_method(Symbol, Symbol);
    
    CgenClassTable(Classes, ostream& str);

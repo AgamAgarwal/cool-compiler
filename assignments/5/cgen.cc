@@ -828,6 +828,14 @@ void CgenNode::set_parentnd(CgenNodeP p)
   parentnd = p;
 }
 
+reg CgenClassTable::get_reg_from_object(Symbol name) {
+	for(int i=object_reg_map.size()-1; i>=0; i--) {
+		if(object_reg_map[i].first==name)
+			return object_reg_map[i].second;
+	}
+	return -1;
+}
+
 int CgenClassTable::get_class_size(Symbol class_name) {
 	
 	if(class_name==Object)
@@ -886,6 +894,24 @@ method_class* CgenClassTable::find_method(Symbol class_name, Symbol method_name)
 			  cur_node=cur_node->get_parentnd();
 		  }
 	  }
+	}
+	return NULL;	//never reached
+}
+
+CgenNode* CgenClassTable::find_attr_enclosing_class(Symbol class_name, Symbol attr_name) {
+	
+	for(List<CgenNode> *l=nds; l!=NULL; l=l->tl()) {
+		CgenNode *cur_node=l->hd();
+		if(cur_node->get_name()==class_name) {
+			while(true) {
+				for(int i=cur_node->features->first(); cur_node->features->more(i); i=cur_node->features->next(i)) {
+					Feature cur_feature=cur_node->features->nth(i);
+					if(cur_feature->is_attr() && ((attr_class*)cur_feature)->name==attr_name)
+						return cur_node;
+				}
+				cur_node=cur_node->get_parentnd();
+			}
+		}
 	}
 	return NULL;	//never reached
 }
@@ -996,6 +1022,7 @@ void CgenClassTable::emit_methods_definitions(CgenNode *class_node) {
 	for(int i=class_node->features->first();class_node->features->more(i); i=class_node->features->next(i)) {
 		Feature f=class_node->features->nth(i);
 		if(f->is_method()) {
+			cur_method=(method_class*)f;
 			emit_method_definition(class_node->get_name(), (method_class*)f);
 		}
 	}
@@ -2441,6 +2468,59 @@ void no_expr_class::code(ostream &s) {
 
 void object_class::code(ostream &s) {
 	
+	//search in let bindings object_reg_map
+	reg let_reg=cgct->get_reg_from_object(name);
+	if(let_reg!=-1) {
+		s<<"\t%"<<new_reg()<<" = bitcast ";
+		cgct->emit_class_name(get_type());
+		s<<"* %"<<let_reg<<" to ";
+		cgct->emit_class_name(get_type());
+		s<<"*\n";
+		return;
+	}
+	
+	//search in function formals
+	bool found_in_formals=false;
+	Formals formals=cgct->cur_method->formals;
+	for(int i=formals->first(); formals->more(i); i=formals->next(i))
+		if(((formal_class*)formals->nth(i))->name==name) {
+			found_in_formals=true;
+			break;
+		}
+	
+	if(found_in_formals) {
+		s<<"\t%"<<new_reg()<<" = bitcast ";
+		cgct->emit_class_name(get_type());
+		s<<"* %"<<name<<" to ";
+		cgct->emit_class_name(get_type());
+		s<<"*\n";
+		return;
+	}
+	
+	//search in class hierarchy
+	CgenNode *enclosing_class=cgct->find_attr_enclosing_class(cgct->cur_method->get_enclosing_class()->get_name(), name);
+	
+	int i;
+	Features features=enclosing_class->features;
+	for(i=features->first(); features->more(i); i=features->next(i))
+		if(features->nth(i)->is_attr() && ((attr_class*)features->nth(i))->name==name)
+			break;
+	
+	reg casted_this, val_ptr;
+	
+	s<<"\t%"<<(casted_this=new_reg())<<" = bitcast ";
+	cgct->emit_class_name(cgct->cur_method->get_enclosing_class()->get_name());
+	s<<"* %this to ";
+	cgct->emit_class_name(enclosing_class->get_name());
+	s<<"*\n";
+	
+	s<<"\t%"<<(val_ptr=new_reg())<<" = getelementptr inbounds ";
+	cgct->emit_class_name(enclosing_class->get_name());
+	s<<"* %"<<casted_this<<", i32 0, i32 "<<(i+1)<<"\n";
+	
+	s<<"\t%"<<new_reg()<<" = load ";
+	cgct->emit_class_name(get_type());
+	s<<"** %"<<val_ptr<<", align 8\n";
 }
 
 
