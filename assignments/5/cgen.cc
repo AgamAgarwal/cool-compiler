@@ -930,19 +930,25 @@ void CgenClassTable::emit_class_declaration(CgenNode *class_node) {
 
 void CgenClassTable::emit_main_method() {
 	str<<"\ndefine i32 @main() {\n";
-	str<<"\t%m = alloca ";
+	str<<"\t%1 = alloca ";
 	emit_class_name(Main);
 	str<<", align 8\n";
 	method_class* method=find_method(Main, main_meth);
 
-	str<<"\t%1 = call ";
+	str<<"\tcall void ";
+	emit_constructor_name(Main);
+	str<<"(";
+	emit_class_name(Main);
+	str<<"* %1)\n";
+
+	str<<"\t%2 = call ";
 	emit_class_name(method->return_type);
 	str<<"* ";
 	emit_method_name(method->get_enclosing_class()->get_name(), method->name);
 	str<<"(";
 	
 	emit_class_name(Main);
-	str<<"* %m";
+	str<<"* %1";
 	
 	str<<")\n";
 	str<<"\t"<<RET<<" i32 0\n";
