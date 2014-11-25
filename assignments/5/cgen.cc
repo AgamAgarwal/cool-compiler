@@ -1273,11 +1273,15 @@ void CgenClassTable::emit_constructor(CgenNode *class_node) {
 			str<<"** %"<<cur_attr_ptr<<", align 8\n";
 		} else {	//if no init is given
 			if(cur_attr->get_type_decl()==Int || cur_attr->get_type_decl()==Bool || cur_attr->get_type_decl()==Str) {
+				str<<"\t%"<<new_reg()<<" = load ";
+				emit_class_name(cur_attr->get_type_decl());
+				str<<"** %"<<cur_attr_ptr<<", align 8\n";
+				
 				str<<"\tcall void ";
 				emit_constructor_name(cur_attr->get_type_decl());
 				str<<"(";
 				emit_class_name(cur_attr->get_type_decl());
-				str<<"* %"<<cur_attr_ptr<<")\n";
+				str<<"* %"<<last_reg()<<")\n";
 			} else {
 				str<<"\tstore ";
 				emit_class_name(cur_attr->get_type_decl());
@@ -1464,11 +1468,15 @@ void CgenClassTable::emit_basic_constructors() {
 	emit_class_name(Str);
 	str<<"* %"<<this_val_ptr<<", i32 0, i32 1\n";
 	
+	str<<"\t%"<<new_reg()<<" = load ";
+	emit_class_name(Int);
+	str<<"** %"<<val_ptr<<", align 8\n";
+	
 	str<<"\tcall void ";
 	emit_constructor_name(Int);
 	str<<"(";
 	emit_class_name(Int);
-	str<<"* %"<<val_ptr<<")\n";
+	str<<"* %"<<last_reg()<<")\n";
 	
 	str<<"\t%"<<(val_ptr=new_reg())<<" = getelementptr inbounds ";
 	emit_class_name(Str);
@@ -1498,7 +1506,7 @@ void CgenClassTable::code()
   }
   
   //defining basic types
-  str<<"%class.String = type { %class.Object, %class.Int, i8* }\n";
+  str<<"%class.String = type { %class.Object, %class.Int*, i8* }\n";
   str<<"%class.Bool = type { %class.Object, i8 }\n";
   str<<"%class.Int = type { %class.Object, i32 }\n";
   str<<"%class.IO = type { %class.Object }\n";
