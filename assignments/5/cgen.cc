@@ -1788,6 +1788,65 @@ void block_class::code(ostream &s) {
 }
 
 void let_class::code(ostream &s) {
+	
+	reg final_reg;
+	
+	if(init->get_type()!=NULL) { //if init is given
+		
+		init->code(s);
+		
+		reg init_val=last_reg(), init_casted_val;
+		
+		s<<"\t%"<<(init_casted_val=new_reg())<<" = bitcast ";
+		cgct->emit_class_name(init->get_type());
+		s<<"* %"<<init_val<<" to ";
+		cgct->emit_class_name(type_decl);
+		s<<"*\n";
+		
+		final_reg=init_casted_val;
+	} else {	//if no init is given
+		if(type_decl==Int || type_decl==Bool || type_decl==Str) {
+			reg obj_ptr;
+			s<<"\t%"<<(obj_ptr=new_reg())<<" = alloca ";
+			cgct->emit_class_name(type_decl);
+			s<<", align 8\n";
+			
+			s<<"\tcall void ";
+			cgct->emit_constructor_name(type_decl);
+			s<<"(";
+			cgct->emit_class_name(type_decl);
+			s<<"* %"<<obj_ptr<<")\n";
+			
+			final_reg=obj_ptr;
+			
+		} else {
+			
+			reg obj_ptr_ptr, obj_ptr;
+			
+			s<<"\t%"<<(obj_ptr_ptr=new_reg())<<" = alloca ";
+			cgct->emit_class_name(type_decl);
+			s<<"*, align 8\n";
+			
+			s<<"\tstore ";
+			cgct->emit_class_name(type_decl);
+			s<<"* null, ";
+			cgct->emit_class_name(type_decl);
+			s<<"** %"<<obj_ptr_ptr<<", align 8\n";
+			
+			s<<"\t%"<<(obj_ptr=new_reg())<<" = load ";
+			cgct->emit_class_name(type_decl);
+			s<<"** %"<<obj_ptr_ptr<<", align 8\n";
+			
+			final_reg=obj_ptr;
+		}
+	}
+	
+	cgct->object_reg_map.push_back(std::make_pair(identifier, final_reg));
+	
+	body->code(s);
+	
+	cgct->object_reg_map.pop_back();
+	
 }
 
 void plus_class::code(ostream &s) {
@@ -2381,6 +2440,7 @@ void no_expr_class::code(ostream &s) {
 }
 
 void object_class::code(ostream &s) {
+	
 }
 
 

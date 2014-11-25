@@ -16,6 +16,9 @@ typedef CgenClassTable *CgenClassTableP;
 class CgenNode;
 typedef CgenNode *CgenNodeP;
 
+typedef long reg;
+reg cur_register;
+
 class CgenClassTable : public SymbolTable<Symbol,CgenNode> {
 private:
    List<CgenNode> *nds;
@@ -49,6 +52,7 @@ private:
 public:
    
    std::map<StringEntry*, int> strings;
+   std::vector<std::pair<Symbol, reg> > object_reg_map;
    
    int get_class_size(Symbol);
    int get_class_size(CgenNode*);
@@ -79,8 +83,6 @@ CgenClassTable *codegen_classtable;
 
 #define cgct codegen_classtable
 
-typedef long reg;
-reg cur_register;
 
 class CgenNode : public class__class {
 private: 
