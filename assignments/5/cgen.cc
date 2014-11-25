@@ -1417,7 +1417,10 @@ void CgenClassTable::emit_basic_constructors() {
 	
 	reg str_ptr;
 	
-	str<<"\t%"<<(str_ptr=new_reg())<<" = load i8** %"<<val_ptr<<", align 8\n";
+	str<<"\t%"<<(str_ptr=new_reg())<<" = call i8* @_Znwm(i64 1)\n";
+	
+	str<<"\tstore i8* %"<<str_ptr<<", i8** %"<<val_ptr<<"\n";
+	
 	str<<"\tcall i8* @strcpy(i8* %"<<str_ptr<<", i8* getelementptr inbounds ([1 x i8]* @.str0, i32 0, i32 0))\n";
 	
 	str<<"\tret void\n}\n";
@@ -2274,7 +2277,7 @@ void int_const_class::code(ostream& s)
 void string_const_class::code(ostream& s)
 {
   //emit_load_string(ACC,stringtable.lookup_string(token->get_string()),s);
-  
+  StringEntry *str_entry=stringtable.lookup_string(token->get_string());
   reg obj, val_ptr, val_ptr_ptr, obj_ptr, final_res;
   
   //Allocate an object of Int class in cur_register='x'
@@ -2287,10 +2290,10 @@ void string_const_class::code(ostream& s)
   cgct->emit_class_name(Str);
   s<<"* %"<<obj<<", i32 0, i32 2\n";
   
-  //load address of 'x+1' to 'x+2'
-  s<<"\t%"<<(val_ptr_ptr=new_reg())<<" = load i8** %"<<val_ptr<<", align 8\n";
+  //allocate a new i8* block in heap of the size of the string constant
+  s<<"\t%"<<(val_ptr_ptr=new_reg())<<" = call i8* @_Znwm(i64 "<<(str_entry->get_len()+1)<<")\n";
+  s<<"\tstore i8* %"<<val_ptr_ptr<<", i8** %"<<val_ptr<<"\n";
   
-  StringEntry *str_entry=stringtable.lookup_string(token->get_string());
   //call strcpy to copy string from constant to 'x+2'
   s<<"\t%"<<new_reg()<<" = call i8* @strcpy(i8* %"<<val_ptr_ptr<<", i8* getelementptr inbounds (["<<(str_entry->get_len()+1)<<" x i8]* @.str"<<cgct->strings[str_entry]<<", i32 0, i32 0))\n";
   
