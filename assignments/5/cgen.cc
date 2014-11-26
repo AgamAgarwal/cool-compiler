@@ -916,16 +916,6 @@ CgenNode* CgenClassTable::find_attr_enclosing_class(Symbol class_name, Symbol at
 	return NULL;	//never reached
 }
 
-bool CgenClassTable::update_object_reg_map(Symbol obj_name, reg new_register) {
-	for(int i=object_reg_map.size()-1; i>=0; i--) {
-		if(object_reg_map[i].first==obj_name) {
-			object_reg_map[i].second=new_register;
-			return true;
-		}
-	}
-	return false;
-}
-
 void CgenClassTable::emit_method_name(Symbol class_name, Symbol method_name) {
 	str<<"@_ZN"<<class_name->get_len()<<class_name<<method_name->get_len()<<method_name;
 }
@@ -1369,6 +1359,11 @@ void CgenClassTable::emit_basic_methods() {
 	str<<"\tcall void @exit(i32 0)";
 	
 	str<<"\tunreachable\n}\n";
+	}
+
+	//Object.copy()
+	{
+	
 	}
 }
 
@@ -1817,8 +1812,28 @@ void assign_class::code(ostream &s) {
 	s<<"*\n";
 	
 	//update object_reg_map, if present
-	if(cgct->update_object_reg_map(name, expr_casted_res))
-		return;
+	for(int i=cgct->object_reg_map.size()-1; i>=0; i--) {
+		if(cgct->object_reg_map[i].first==name) {
+			reg new_val;
+			s<<"\t%"<<(new_val=new_reg())<<" = load ";
+			cgct->emit_class_name(get_type());
+			s<<"* %"<<expr_casted_res<<"\n";
+			
+			s<<"\tstore ";
+			cgct->emit_class_name(get_type());
+			s<<" %"<<new_val<<", ";
+			cgct->emit_class_name(get_type());
+			s<<"* %"<<cgct->object_reg_map[i].second<<"\n";
+			
+			s<<"\t%"<<new_reg()<<" = bitcast ";
+			cgct->emit_class_name(get_type());
+			s<<"* %"<<expr_casted_res<<" to ";
+			cgct->emit_class_name(get_type());
+			s<<"*\n";
+			
+			return;
+		}
+	}
 	
 	//search in class hierarchy
 	CgenNode *enclosing_class=cgct->find_attr_enclosing_class(cgct->cur_method->get_enclosing_class()->get_name(), name);
