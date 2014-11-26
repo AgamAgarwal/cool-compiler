@@ -1468,15 +1468,23 @@ void CgenClassTable::emit_basic_constructors() {
 	emit_class_name(Str);
 	str<<"* %"<<this_val_ptr<<", i32 0, i32 1\n";
 	
-	str<<"\t%"<<new_reg()<<" = load ";
-	emit_class_name(Int);
-	str<<"** %"<<val_ptr<<", align 8\n";
+	reg heap_obj, casted_heap_obj;
+	str<<"\t%"<<(heap_obj=new_reg())<<" = call i8* @_Znwm(i64 "<<cgct->get_class_size(Int)<<")\n";
+	str<<"\t%"<<(casted_heap_obj=new_reg())<<" = bitcast i8* %"<<heap_obj<<" to ";
+	cgct->emit_class_name(Int);
+	str<<"*\n";
 	
 	str<<"\tcall void ";
 	emit_constructor_name(Int);
 	str<<"(";
 	emit_class_name(Int);
-	str<<"* %"<<last_reg()<<")\n";
+	str<<"* %"<<casted_heap_obj<<")\n";
+	
+	str<<"store ";
+	cgct->emit_class_name(Int);
+	str<<"* %"<<casted_heap_obj<<", ";
+	cgct->emit_class_name(Int);
+	str<<"** %"<<val_ptr<<"\n";
 	
 	str<<"\t%"<<(val_ptr=new_reg())<<" = getelementptr inbounds ";
 	emit_class_name(Str);
@@ -1561,6 +1569,7 @@ void CgenClassTable::code()
   str<<"\n\n";
   str<<"declare noalias i8* @_Znwm(i64)\n";
   str<<"declare i8* @strcpy(i8*, i8*)\n";
+  str<<"declare i32 @strcmp(i8*, i8*)\n";
   str<<"declare i32 @printf(i8*, ...)\n";
   str<<"declare i32 @scanf(i8*, ...)\n";
   str<<"declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture, i8* nocapture readonly, i64, i32, i1)\n";
@@ -2348,6 +2357,116 @@ void lt_class::code(ostream &s) {
 }
 
 void eq_class::code(ostream &s) {
+	reg e1_res, e2_res, comp_val, heap_obj, res_obj, res_val_ptr, converted_res_val;
+	
+	//code e1 and get res
+	e1->code(s);
+	e1_res=last_reg();
+	
+	//code e2 and get res
+	e2->code(s);
+	e2_res=last_reg();
+	
+	//check if basic and compare val if yes
+	
+	if(e1->get_type()==Int) {
+		reg e1_val_ptr, e1_val, e2_val_ptr, e2_val;
+		s<<"\t%"<<(e1_val_ptr=new_reg())<<" = getelementptr inbounds ";
+		cgct->emit_class_name(Int);
+		s<<"* %"<<e1_res<<", i32 0, i32 1\n";
+		
+		//load value from the pointer of first
+		s<<"\t%"<<(e1_val=new_reg())<<" = load i32* %"<<e1_val_ptr<<", align 4\n";
+		
+		//get element pointer to value of second obj
+		s<<"\t%"<<(e2_val_ptr=new_reg())<<" = getelementptr inbounds ";
+		cgct->emit_class_name(Int);
+		s<<"* %"<<e2_res<<", i32 0, i32 1\n";
+		
+		//load value from the pointer of second
+		s<<"\t%"<<(e2_val=new_reg())<<" = load i32* %"<<e2_val_ptr<<", align 4\n";
+		
+		//compare both values
+		s<<"\t%"<<(comp_val=new_reg())<<" = icmp eq i32 %"<<e1_val<<", %"<<e2_val<<"\n";
+	} else if(e1->get_type()==Bool) {
+		reg e1_val_ptr, e1_val, e2_val_ptr, e2_val;
+		s<<"\t%"<<(e1_val_ptr=new_reg())<<" = getelementptr inbounds ";
+		cgct->emit_class_name(Bool);
+		s<<"* %"<<e1_res<<", i32 0, i32 1\n";
+		
+		//load value from the pointer of first
+		s<<"\t%"<<(e1_val=new_reg())<<" = load i8* %"<<e1_val_ptr<<", align 1\n";
+		
+		//get element pointer to value of second obj
+		s<<"\t%"<<(e2_val_ptr=new_reg())<<" = getelementptr inbounds ";
+		cgct->emit_class_name(Bool);
+		s<<"* %"<<e2_res<<", i32 0, i32 1\n";
+		
+		//load value from the pointer of second
+		s<<"\t%"<<(e2_val=new_reg())<<" = load i8* %"<<e2_val_ptr<<", align 1\n";
+		
+		//compare both values
+		s<<"\t%"<<(comp_val=new_reg())<<" = icmp eq i8 %"<<e1_val<<", %"<<e2_val<<"\n";
+		
+	} else if(e1->get_type()==Str) {
+		reg e1_val_ptr, e1_val, e2_val_ptr, e2_val, strcmp_val;
+		s<<"\t%"<<(e1_val_ptr=new_reg())<<" = getelementptr inbounds ";
+		cgct->emit_class_name(Str);
+		s<<"* %"<<e1_res<<", i32 0, i32 2\n";
+		
+		//load value from the pointer of first
+		s<<"\t%"<<(e1_val=new_reg())<<" = load i8** %"<<e1_val_ptr<<", align 8\n";
+		
+		//get element pointer to value of second obj
+		s<<"\t%"<<(e2_val_ptr=new_reg())<<" = getelementptr inbounds ";
+		cgct->emit_class_name(Str);
+		s<<"* %"<<e2_res<<", i32 0, i32 2\n";
+		
+		//load value from the pointer of second
+		s<<"\t%"<<(e2_val=new_reg())<<" = load i8** %"<<e2_val_ptr<<", align 8\n";
+		
+		//compare strings
+		s<<"\t%"<<(strcmp_val=new_reg())<<" = call i32 @strcmp(i8* %"<<e1_val<<", i8* %"<<e2_val<<")\n";
+		
+		//compare value with 0
+		s<<"\t%"<<(comp_val=new_reg())<<" = icmp eq i32 %"<<strcmp_val<<", 0\n";
+	} else { //else comp pointers
+		reg e1_i8_ptr, e2_i8_ptr;
+		s<<"\t%"<<(e1_i8_ptr=new_reg())<<" = bitcast ";
+		cgct->emit_class_name(e1->get_type());
+		s<<"* %"<<e1_res<<" to i8*\n";
+		
+		s<<"\t%"<<(e2_i8_ptr=new_reg())<<" = bitcast ";
+		cgct->emit_class_name(e2->get_type());
+		s<<"* %"<<e2_res<<" to i8*\n";
+		
+		s<<"\t%"<<(comp_val=new_reg())<<" = icmp eq i8* %"<<e1_i8_ptr<<", %"<<e2_i8_ptr<<"\n";
+	}
+	
+	//make new Bool obj on heap
+	s<<"\t%"<<(heap_obj=new_reg())<<" = call i8* @_Znwm(i64 "<<cgct->get_class_size(Bool)<<")\n";
+	
+	s<<"\t%"<<(res_obj=new_reg())<<" = bitcast i8* %"<<heap_obj<<" to ";
+	cgct->emit_class_name(Bool);
+	s<<"*\n";
+	
+	//set value of new Bool obj
+	s<<"\t%"<<(res_val_ptr=new_reg())<<" = getelementptr inbounds ";
+	cgct->emit_class_name(Bool);
+	s<<"* %"<<res_obj<<", i32 0, i32 1\n";
+	
+	//convert i1 to i8
+	s<<"\t%"<<(converted_res_val=new_reg())<<" = zext i1 %"<<comp_val<<" to i8\n";
+	
+	//store converted value to result
+	s<<"\tstore i8 %"<<(converted_res_val)<<", i8* %"<<res_val_ptr<<", align 1\n";
+	
+	//bitcast to bring to last register (Kludge)
+	s<<"\t%"<<new_reg()<<" = bitcast ";
+	cgct->emit_class_name(Bool);
+	s<<"* %"<<res_obj<<" to ";
+	cgct->emit_class_name(Bool);
+	s<<"*\n";
 }
 
 void leq_class::code(ostream &s) {
