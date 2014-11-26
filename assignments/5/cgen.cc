@@ -1059,8 +1059,9 @@ void CgenClassTable::emit_methods_definitions(CgenNode *class_node) {
 void CgenClassTable::emit_basic_methods() {
 	
 	reg val_ptr, val;
-	{
+	
 	//IO.out_int
+	{
 	reset_cur_register();
 	str<<"\ndefine linkonce_odr ";
 	emit_class_name(IO);
@@ -1087,8 +1088,8 @@ void CgenClassTable::emit_basic_methods() {
 	str<<"}\n";
 	}
 	
-	{
 	//IO.out_string
+	{
 	reset_cur_register();
 	str<<"\ndefine linkonce_odr ";
 	emit_class_name(IO);
@@ -1115,8 +1116,8 @@ void CgenClassTable::emit_basic_methods() {
 	str<<"}\n";
 	}
 	
-	{
 	//IO.in_int
+	{
 	reset_cur_register();
 	str<<"\ndefine linkonce_odr ";
 	emit_class_name(Int);
@@ -1147,8 +1148,8 @@ void CgenClassTable::emit_basic_methods() {
 	str<<"}\n";
 	}
 	
-	{
 	//IO.in_string
+	{
 	reset_cur_register();
 	str<<"\ndefine linkonce_odr ";
 	emit_class_name(Str);
@@ -1218,8 +1219,8 @@ void CgenClassTable::emit_basic_methods() {
 	str<<"}\n";
 	}
 	
-	{
 	//String.length()
+	{
 	reset_cur_register();
 	str<<"\ndefine linkonce_odr ";
 	emit_class_name(Int);
@@ -1241,6 +1242,115 @@ void CgenClassTable::emit_basic_methods() {
 	 
 	str<<"\tret ";
 	emit_class_name(Int);
+	str<<"* %"<<res_obj<<"\n";
+	
+	str<<"}\n";
+	}
+	
+	//String.concat()
+	{
+	reset_cur_register();
+	str<<"\ndefine linkonce_odr ";
+	emit_class_name(Str);
+	str<<"* ";
+	emit_method_name(Str, concat);
+	str<<"(";
+	emit_class_name(Str);
+	str<<"* %this, ";
+	emit_class_name(Str);
+	str<<"* %s) align 2 {\n";
+	
+	reg len1_obj, len1_ptr, len1, len2_obj, len2_ptr, len2, final_len, final_len_inc, val1_ptr, val1, val2_ptr, val2;
+	
+	str<<"\t%"<<(len1_obj=new_reg())<<" = call ";
+	emit_class_name(Int);
+	str<<"* ";
+	emit_method_name(Str, length);
+	str<<"(";
+	emit_class_name(Str);
+	str<<"* %this)\n";
+	
+	str<<"\t%"<<(len1_ptr=new_reg())<<" = getelementptr inbounds ";
+	emit_class_name(Int);
+	str<<"* %"<<len1_obj<<", i32 0, i32 1\n";
+	
+	str<<"\t%"<<(len1=new_reg())<<" = load i32* %"<<len1_ptr<<"\n";
+	
+	str<<"\t%"<<(len2_obj=new_reg())<<" = call ";
+	emit_class_name(Int);
+	str<<"* ";
+	emit_method_name(Str, length);
+	str<<"(";
+	emit_class_name(Str);
+	str<<"* %s)\n";
+	
+	str<<"\t%"<<(len2_ptr=new_reg())<<" = getelementptr inbounds ";
+	emit_class_name(Int);
+	str<<"* %"<<len2_obj<<", i32 0, i32 1\n";
+	
+	str<<"\t%"<<(len2=new_reg())<<" = load i32* %"<<len2_ptr<<"\n";
+	
+	str<<"\t%"<<(final_len=new_reg())<<" = add nsw i32 %"<<len1<<", %"<<len2<<"\n";
+	
+	reg final_len_heap, final_len_obj, final_len_val_ptr;
+	
+	str<<"\t%"<<(final_len_heap=new_reg())<<" = call i8* @_Znwm(i64 "<<get_class_size(Int)<<")\n";
+	str<<"\t%"<<(final_len_obj=new_reg())<<" = bitcast i8* %"<<final_len_heap<<" to ";
+	emit_class_name(Int);
+	str<<"*\n";
+	
+	str<<"\t%"<<(final_len_val_ptr=new_reg())<<" = getelementptr inbounds ";
+	emit_class_name(Int);
+	str<<"* %"<<final_len_obj<<", i32 0, i32 1\n";
+	
+	str<<"\tstore i32 %"<<final_len<<", i32* %"<<final_len_val_ptr<<"\n";
+	
+	//creating final String obj on heap
+	reg res_heap, res_obj, res_len_ptr, res_val_ptr;
+	
+	str<<"\t%"<<(res_heap=new_reg())<<" = call i8* @_Znwm(i64 "<<get_class_size(Str)<<")\n";
+	str<<"\t%"<<(res_obj=new_reg())<<" = bitcast i8* %"<<res_heap<<" to ";
+	emit_class_name(Str);
+	str<<"*\n";
+	
+	str<<"\t%"<<(res_len_ptr=new_reg())<<" = getelementptr inbounds ";
+	emit_class_name(Str);
+	str<<"* %"<<res_obj<<", i32 0, i32 1\n";
+	
+	str<<"\tstore ";
+	emit_class_name(Int);
+	str<<"* %"<<final_len_obj<<", ";
+	emit_class_name(Int);
+	str<<"** %"<<res_len_ptr<<"\n";
+	
+	str<<"\t%"<<(res_val_ptr=new_reg())<<" = getelementptr inbounds ";
+	emit_class_name(Str);
+	str<<"* %"<<res_obj<<", i32 0, i32 2\n";
+	
+	//final length for allocation
+	str<<"\t%"<<(final_len_inc=new_reg())<<" = add nsw i32 %"<<final_len<<", 1\n";
+	reg temp=final_len_inc;
+	str<<"\t%"<<(final_len_inc=new_reg())<<" = zext i32 %"<<temp<<" to i64\n";
+	
+	reg res_val;
+	str<<"\t%"<<(res_val=new_reg())<<" = call i8* @_Znwm(i64 %"<<final_len_inc<<")\n";
+	str<<"\tstore i8* %"<<res_val<<", i8** %"<<res_val_ptr<<"\n";
+	
+	str<<"\t%"<<(val1_ptr=new_reg())<<" = getelementptr inbounds ";
+	emit_class_name(Str);
+	str<<"* %this, i32 0, i32 2\n";
+	str<<"\t%"<<(val1=new_reg())<<" = load i8** %"<<val1_ptr<<"\n";
+	
+	str<<"\t%"<<(val2_ptr=new_reg())<<" = getelementptr inbounds ";
+	emit_class_name(Str);
+	str<<"* %s, i32 0, i32 2\n";
+	str<<"\t%"<<(val2=new_reg())<<" = load i8** %"<<val2_ptr<<"\n";
+	
+	str<<"\t%"<<new_reg()<<" = call i8* @strcpy(i8* %"<<res_val<<", i8* %"<<val1<<")\n";
+	str<<"\t%"<<new_reg()<<" = call i8* @strcat(i8* %"<<res_val<<", i8* %"<<val2<<")\n";
+	
+	str<<"\tret ";
+	emit_class_name(Str);
 	str<<"* %"<<res_obj<<"\n";
 	
 	str<<"}\n";
@@ -1615,6 +1725,7 @@ void CgenClassTable::code()
   str<<"declare noalias i8* @_Znwm(i64)\n";
   str<<"declare i8* @strcpy(i8*, i8*)\n";
   str<<"declare i32 @strcmp(i8*, i8*)\n";
+  str<<"declare i8* @strcat(i8*, i8*)\n";
   str<<"declare i64 @strlen(i8*)\n";
   str<<"declare i32 @printf(i8*, ...)\n";
   str<<"declare i32 @scanf(i8*, ...)\n";
