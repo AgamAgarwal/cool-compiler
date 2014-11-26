@@ -2408,12 +2408,14 @@ void int_const_class::code(ostream& s)
   //
   //emit_load_int(ACC,inttable.lookup_string(token->get_string()),s);
   
-  reg obj, val_pointer, obj_pointer, final_res;
+  reg heap_obj, obj, val_pointer, obj_pointer, final_res;
   
-  //Allocate an object of Int class in cur_register='x'
-  s<<"\t%"<<(obj=new_reg())<<" = alloca ";
+  //Allocate an object of Int class in cur_register
+  
+  s<<"\t%"<<(heap_obj=new_reg())<<" = call i8* @_Znwm(i64 "<<cgct->get_class_size(Int)<<")\n";
+  s<<"\t%"<<(obj=new_reg())<<" = bitcast i8* %"<<heap_obj<<" to ";
   cgct->emit_class_name(Int);
-  s<<", align 4\n";
+  s<<"*\n";
   
   //get ptr of val from the pointer 'x' and store it to 'x+1'
   s<<"\t%"<<(val_pointer=new_reg())<<" = getelementptr inbounds ";
