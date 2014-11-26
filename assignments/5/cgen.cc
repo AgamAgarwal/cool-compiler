@@ -1355,6 +1355,21 @@ void CgenClassTable::emit_basic_methods() {
 	
 	str<<"}\n";
 	}
+
+	//Object.abort()
+	{
+	str<<"\ndefine linkonce_odr ";
+	emit_class_name(Object);
+	str<<"* ";
+	emit_method_name(Object, cool_abort);
+	str<<"(";
+	emit_class_name(Object);
+	str<<"* %this) align 2 {\n";
+	
+	str<<"\tcall void @exit(i32 0)";
+	
+	str<<"\tunreachable\n}\n";
+	}
 }
 
 void CgenClassTable::emit_constructor(CgenNode *class_node) {
@@ -1729,6 +1744,7 @@ void CgenClassTable::code()
   str<<"declare i64 @strlen(i8*)\n";
   str<<"declare i32 @printf(i8*, ...)\n";
   str<<"declare i32 @scanf(i8*, ...)\n";
+  str<<"declare void @exit(i32)\n";
   str<<"declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture, i8* nocapture readonly, i64, i32, i1)\n";
   /*
   if (cgen_debug) cout << "coding global data" << endl;
