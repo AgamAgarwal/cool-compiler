@@ -2488,12 +2488,13 @@ void bool_const_class::code(ostream& s)
 {
   //emit_load_bool(ACC, BoolConst(val), s);
   
-  reg obj, val_ptr, obj_ptr, final_res;
+  reg heap_obj, obj, val_ptr, obj_ptr, final_res;
   
   //Allocate an object of Int class in cur_register='x'
-  s<<"\t%"<<(obj=new_reg())<<" = alloca ";
+  s<<"\t%"<<(heap_obj=new_reg())<<" = call i8* @_Znwm(i64 "<<cgct->get_class_size(Bool)<<")\n";
+  s<<"\t%"<<(obj=new_reg())<<" = bitcast i8* %"<<heap_obj<<" to ";
   cgct->emit_class_name(Bool);
-  s<<", align 1\n";
+  s<<"*\n";
   
   //get ptr of val from the pointer 'x' and store it to 'x+1'
   s<<"\t%"<<(val_ptr=new_reg())<<" = getelementptr inbounds ";
