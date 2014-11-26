@@ -966,25 +966,27 @@ void CgenClassTable::emit_class_declaration(CgenNode *class_node) {
 
 void CgenClassTable::emit_main_method() {
 	str<<"\ndefine i32 @main() {\n";
-	str<<"\t%1 = alloca ";
+	str<<"\t%1 = call i8* @_Znwm(i64 "<<get_class_size(Main)<<")\n";
+	str<<"\t%2 = bitcast i8* %1 to ";
 	emit_class_name(Main);
-	str<<", align 8\n";
+	str<<"*\n";
+	
 	method_class* method=find_method(Main, main_meth);
 
 	str<<"\tcall void ";
 	emit_constructor_name(Main);
 	str<<"(";
 	emit_class_name(Main);
-	str<<"* %1)\n";
+	str<<"* %2)\n";
 
-	str<<"\t%2 = call ";
+	str<<"\t%3 = call ";
 	emit_class_name(method->return_type);
 	str<<"* ";
 	emit_method_name(method->get_enclosing_class()->get_name(), method->name);
 	str<<"(";
 	
 	emit_class_name(Main);
-	str<<"* %1";
+	str<<"* %2";
 	
 	str<<")\n";
 	str<<"\t"<<RET<<" i32 0\n";
@@ -1124,11 +1126,13 @@ void CgenClassTable::emit_basic_methods() {
 	emit_class_name(IO);
 	str<<"* %this) align 2 {\n";
 	
-	reg new_obj, new_val_ptr, new_obj_ptr, final_res_ptr, final_res;
+	reg heap_obj, new_obj, new_val_ptr, new_obj_ptr, final_res_ptr, final_res;
 	
-	str<<"\t%"<<(new_obj=new_reg())<<" = alloca ";
+	str<<"\t%"<<(heap_obj=new_reg())<<" = call noalias i8* @_Znwm(i64 "<<get_class_size(Int)<<")\n";
+	
+	str<<"\t%"<<(new_obj=new_reg())<<" = bitcast i8* %"<<heap_obj<<" to ";
 	emit_class_name(Int);
-	str<<", align 4\n";
+	str<<"*\n";
 	
 	str<<"\t%"<<(new_val_ptr=new_reg())<<" = getelementptr inbounds ";
 	emit_class_name(Int);
@@ -1136,21 +1140,9 @@ void CgenClassTable::emit_basic_methods() {
 	
 	str<<"\t%"<<new_reg()<<" = call i32 (i8*, ...)* @scanf(i8* getelementptr inbounds ([3 x i8]* @.str_int, i32 0, i32 0), i32* %"<<new_val_ptr<<")\n";
 	
-	str<<"\t%"<<(final_res_ptr=new_reg())<<" = call noalias i8* @_Znwm(i64 8)\n";
-	
-	str<<"\t%"<<(new_obj_ptr=new_reg())<<" = bitcast ";
-	emit_class_name(Int);
-	str<<"* %"<<new_obj<<" to i8*\n";
-	
-	str<<"\tcall void @llvm.memcpy.p0i8.p0i8.i64(i8* %"<<final_res_ptr<<", i8* %"<<new_obj_ptr<<", i64 8, i32 1, i1 false)\n";
-	
-	str<<"\t%"<<(final_res=new_reg())<<" = bitcast i8* %"<<final_res_ptr<<" to ";
-	emit_class_name(Int);
-	str<<"*\n";
-	
 	str<<"\tret ";
 	emit_class_name(Int);
-	str<<"* %"<<final_res<<"\n";
+	str<<"* %"<<new_obj<<"\n";
 	
 	str<<"}\n";
 	}
@@ -1166,7 +1158,7 @@ void CgenClassTable::emit_basic_methods() {
 	emit_class_name(IO);
 	str<<"* %this) align 2 {\n";
 	
-	reg in_string, in_size_32_ptr, in_size_32_val, in_size_64, heap_string, heap_obj, heap_string_obj, heap_string_ptr;
+	reg in_string, in_size_32_ptr, in_size_32_val, in_size_32_val_inc, in_size_64, heap_string, heap_obj, heap_string_obj, heap_string_ptr;
 	
 	str<<"\t%"<<(in_string=new_reg())<<" = alloca i8, align 8\n";
 	
@@ -1176,17 +1168,42 @@ void CgenClassTable::emit_basic_methods() {
 	
 	str<<"\t%"<<(in_size_32_val=new_reg())<<" = load i32* %"<<in_size_32_ptr<<", align 4\n";
 	
-	str<<"\t%"<<(in_size_64=new_reg())<<" = zext i32 %"<<in_size_32_val<<" to i64\n";
+	str<<"\t%"<<(in_size_32_val_inc=new_reg())<<" = add nsw i32 %"<<in_size_32_val<<", 1\n";
+	
+	str<<"\t%"<<(in_size_64=new_reg())<<" = zext i32 %"<<in_size_32_val_inc<<" to i64\n";
 	
 	str<<"\t%"<<(heap_string=new_reg())<<" = call noalias i8* @_Znwm(i64 %"<<in_size_64<<")\n";
 	
 	str<<"\tcall void @llvm.memcpy.p0i8.p0i8.i64(i8* %"<<heap_string<<", i8* %"<<in_string<<", i64 %"<<in_size_64<<", i32 1, i1 false)\n";
 	
-	str<<"\t%"<<(heap_obj=new_reg())<<" = call noalias i8* @_Znwm(i64 16)\n";
+	str<<"\t%"<<(heap_obj=new_reg())<<" = call noalias i8* @_Znwm(i64 "<<get_class_size(Str)<<")\n";
 	
 	str<<"\t%"<<(heap_string_obj=new_reg())<<" = bitcast i8* %"<<heap_obj<<" to ";
 	emit_class_name(Str);
 	str<<"*\n";
+	
+	reg heap_len_obj, heap_len_val, str_len_obj_ptr;
+	str<<"\t%"<<(heap_obj=new_reg())<<" = call noalias i8* @_Znwm(i64 "<<get_class_size(Int)<<")\n";
+	
+	str<<"\t%"<<(heap_len_obj=new_reg())<<" = bitcast i8* %"<<heap_obj<<" to ";
+	emit_class_name(Int);
+	str<<"*\n";
+	
+	str<<"\t%"<<(heap_len_val=new_reg())<<" = getelementptr inbounds ";
+	emit_class_name(Int);
+	str<<"* %"<<heap_len_obj<<", i32 0, i32 1\n";
+	
+	str<<"\tstore i32 %"<<in_size_32_val<<", i32* %"<<heap_len_val<<"\n";
+	
+	str<<"\t%"<<(str_len_obj_ptr=new_reg())<<" = getelementptr inbounds ";
+	emit_class_name(Str);
+	str<<"* %"<<heap_string_obj<<", i32 0, i32 1\n";
+	
+	str<<"\tstore ";
+	emit_class_name(Int);
+	str<<"* %"<<heap_len_obj<<", ";
+	emit_class_name(Int);
+	str<<"** %"<<str_len_obj_ptr<<"\n";
 	
 	str<<"\t%"<<(heap_string_ptr=new_reg())<<" = getelementptr inbounds ";
 	emit_class_name(Str);
@@ -1197,6 +1214,34 @@ void CgenClassTable::emit_basic_methods() {
 	str<<"\tret ";
 	emit_class_name(Str);
 	str<<"* %"<<heap_string_obj<<"\n";
+	
+	str<<"}\n";
+	}
+	
+	{
+	//String.length()
+	reset_cur_register();
+	str<<"\ndefine linkonce_odr ";
+	emit_class_name(Int);
+	str<<"* ";
+	emit_method_name(Str, length);
+	str<<"(";
+	emit_class_name(Str);
+	str<<"* %this) align 2 {\n";
+	
+	reg len_obj_ptr, res_obj;
+	str<<"\t%"<<(len_obj_ptr=new_reg())<<" = getelementptr ";
+	emit_class_name(Str);
+	str<<"* %this, i32 0, i32 1\n";
+	
+	//load the Int* pointer into the last register
+	str<<"\t%"<<(res_obj=new_reg())<<" = load ";
+	emit_class_name(Int);
+	str<<"** %"<<len_obj_ptr<<"\n";
+	 
+	str<<"\tret ";
+	emit_class_name(Int);
+	str<<"* %"<<res_obj<<"\n";
 	
 	str<<"}\n";
 	}
@@ -1480,7 +1525,7 @@ void CgenClassTable::emit_basic_constructors() {
 	emit_class_name(Int);
 	str<<"* %"<<casted_heap_obj<<")\n";
 	
-	str<<"store ";
+	str<<"\tstore ";
 	cgct->emit_class_name(Int);
 	str<<"* %"<<casted_heap_obj<<", ";
 	cgct->emit_class_name(Int);
@@ -1570,6 +1615,7 @@ void CgenClassTable::code()
   str<<"declare noalias i8* @_Znwm(i64)\n";
   str<<"declare i8* @strcpy(i8*, i8*)\n";
   str<<"declare i32 @strcmp(i8*, i8*)\n";
+  str<<"declare i64 @strlen(i8*)\n";
   str<<"declare i32 @printf(i8*, ...)\n";
   str<<"declare i32 @scanf(i8*, ...)\n";
   str<<"declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture, i8* nocapture readonly, i64, i32, i1)\n";
@@ -2622,19 +2668,43 @@ void string_const_class::code(ostream& s)
 {
   //emit_load_string(ACC,stringtable.lookup_string(token->get_string()),s);
   StringEntry *str_entry=stringtable.lookup_string(token->get_string());
-  reg heap_obj, obj, val_ptr, val_ptr_ptr, obj_ptr, final_res;
+  reg heap_obj, obj, val_ptr, val_ptr_ptr, len_obj_ptr,casted_len_obj_ptr, len_val_ptr, obj_ptr, final_res;
   
-  //Allocate an object of Int class in cur_register='x'
+  //Allocate an object of Str class in cur_register='x'
   s<<"\t%"<<(heap_obj=new_reg())<<" = call i8* @_Znwm(i64 "<<cgct->get_class_size(Str)<<")\n";
   s<<"\t%"<<(obj=new_reg())<<" = bitcast i8* %"<<heap_obj<<" to ";
   cgct->emit_class_name(Str);
   s<<"*\n";
+ 
+  //allocate a new i8* block in heap for Int object for length
+  s<<"\t%"<<(len_obj_ptr=new_reg())<<" = call i8* @_Znwm(i64 "<<(cgct->get_class_size(Int))<<")\n";
+  s<<"\t%"<<(casted_len_obj_ptr=new_reg())<<" = bitcast i8* %"<<(len_obj_ptr)<<" to ";
+  cgct->emit_class_name(Int);
+  s<<"*\n";
   
+  //store length of string constant into the Int object in heap
+  s<<"\t%"<<(len_val_ptr=new_reg())<<" = getelementptr inbounds ";
+  cgct->emit_class_name(Int);
+  s<<"* %"<<casted_len_obj_ptr<<", i32 0, i32 1\n";
+  s<<"\tstore i32 "<<(str_entry->get_len())<<", i32* %"<<len_val_ptr<<", align 4\n";
+  
+  //store pointer to Int obj in heap into the Int* slot in String obj
+  reg len_obj_ptr_ptr;
+  s<<"\t%"<<(len_obj_ptr_ptr=new_reg())<<" = getelementptr inbounds ";
+  cgct->emit_class_name(Str);
+  s<<"* %"<<(obj)<<", i32 0, i32 1\n";
+  
+  s<<"\tstore ";
+  cgct->emit_class_name(Int);
+  s<<"* %"<<casted_len_obj_ptr<<", ";
+  cgct->emit_class_name(Int);
+  s<<"** %"<<len_obj_ptr_ptr<<"\n";
+   
   //get ptr of val from the pointer 'x' and store it to 'x+1'
   s<<"\t%"<<(val_ptr=new_reg())<<" = getelementptr inbounds ";
   cgct->emit_class_name(Str);
   s<<"* %"<<obj<<", i32 0, i32 2\n";
-  
+   
   //allocate a new i8* block in heap of the size of the string constant
   s<<"\t%"<<(val_ptr_ptr=new_reg())<<" = call i8* @_Znwm(i64 "<<(str_entry->get_len()+1)<<")\n";
   s<<"\tstore i8* %"<<val_ptr_ptr<<", i8** %"<<val_ptr<<"\n";
