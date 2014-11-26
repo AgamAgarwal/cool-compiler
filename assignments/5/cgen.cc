@@ -2424,6 +2424,37 @@ void leq_class::code(ostream &s) {
 }
 
 void comp_class::code(ostream &s) {
+	e1->code(s);
+	
+	reg expr_res=last_reg(), expr_val_ptr, expr_val, comp_val, res_obj, res_val_ptr;
+	
+	s<<"\t%"<<(expr_val_ptr=new_reg())<<" = getelementptr inbounds ";
+	cgct->emit_class_name(Bool);
+	s<<"* %"<<expr_res<<", i32 0, i32 1\n";
+	
+	s<<"\t%"<<(expr_val=new_reg())<<" = load i8* %"<<expr_val_ptr<<", align 1\n";
+	
+	s<<"\t%"<<(comp_val=new_reg())<<" = sub nsw i8 1, %"<<expr_val<<"\n";
+	
+	reg heap_obj;
+	s<<"\t%"<<(heap_obj=new_reg())<<" = call i8* @_Znwm(i64 "<<cgct->get_class_size(Bool)<<")\n";
+	
+	s<<"\t%"<<(res_obj=new_reg())<<" = bitcast i8* %"<<heap_obj<<" to ";
+	cgct->emit_class_name(Bool);
+	s<<"*\n";
+	
+	s<<"\t%"<<(res_val_ptr=new_reg())<<" = getelementptr inbounds ";
+	cgct->emit_class_name(Bool);
+	s<<"* %"<<res_obj<<", i32 0, i32 1\n";
+	
+	s<<"\tstore i8 %"<<comp_val<<", i8* %"<<res_val_ptr<<", align 1\n";
+	
+	//get result to last register
+	s<<"\t%"<<new_reg()<<" = bitcast ";
+	cgct->emit_class_name(Bool);
+	s<<"* %"<<res_obj<<" to ";
+	cgct->emit_class_name(Bool);
+	s<<"*\n";
 }
 
 void int_const_class::code(ostream& s)  
