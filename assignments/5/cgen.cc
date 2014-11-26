@@ -2447,12 +2447,13 @@ void string_const_class::code(ostream& s)
 {
   //emit_load_string(ACC,stringtable.lookup_string(token->get_string()),s);
   StringEntry *str_entry=stringtable.lookup_string(token->get_string());
-  reg obj, val_ptr, val_ptr_ptr, obj_ptr, final_res;
+  reg heap_obj, obj, val_ptr, val_ptr_ptr, obj_ptr, final_res;
   
   //Allocate an object of Int class in cur_register='x'
-  s<<"\t%"<<(obj=new_reg())<<" = alloca ";
+  s<<"\t%"<<(heap_obj=new_reg())<<" = call i8* @_Znwm(i64 "<<cgct->get_class_size(Str)<<")\n";
+  s<<"\t%"<<(obj=new_reg())<<" = bitcast i8* %"<<heap_obj<<" to ";
   cgct->emit_class_name(Str);
-  s<<", align 8\n";
+  s<<"*\n";
   
   //get ptr of val from the pointer 'x' and store it to 'x+1'
   s<<"\t%"<<(val_ptr=new_reg())<<" = getelementptr inbounds ";
