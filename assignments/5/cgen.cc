@@ -1032,9 +1032,9 @@ void CgenClassTable::emit_method_definition(Symbol class_name, method_class* met
 	
 	reg last_result=last_reg(), converted_result=new_reg();
 	str<<"\t%"<<converted_result<<" = bitcast ";
-	emit_class_name(method->expr->get_type());
+	emit_class_name(method->expr->get_type()!=SELF_TYPE?method->expr->get_type():class_name);
 	str<<"* %"<<last_result<<" to ";
-	emit_class_name(method->return_type);
+	emit_class_name(method->return_type!=SELF_TYPE?method->return_type:class_name);
 	str<<"*\n";
 	
 	str<<"\t"<<RET<<" ";
@@ -1887,13 +1887,13 @@ void static_dispatch_class::code(ostream &s) {
 }
 
 void dispatch_class::code(ostream &s) {
-	method_class *method=cgct->find_method(expr->get_type(), name);
+	method_class *method=cgct->find_method(expr->get_type()!=SELF_TYPE?expr->get_type():cgct->cur_method->get_enclosing_class()->get_name(), name);
 	
 	expr->code(s);
 	reg expr_last=last_reg(), expr_reg;
-	
+
 	s<<"\t%"<<(expr_reg=new_reg())<<" = bitcast ";
-	cgct->emit_class_name(expr->get_type());
+	cgct->emit_class_name(expr->get_type()!=SELF_TYPE?expr->get_type():cgct->cur_method->get_enclosing_class()->get_name());
 	s<<"* %"<<expr_last<<" to ";
 	cgct->emit_class_name(method->get_enclosing_class()->get_name());
 	s<<"*\n";
@@ -1931,7 +1931,7 @@ void dispatch_class::code(ostream &s) {
 		s<<"\t%"<<new_reg()<<" = bitcast ";
 		cgct->emit_class_name(method->get_enclosing_class()->get_name());
 		s<<"* %"<<final_res<<" to ";
-		cgct->emit_class_name(expr->get_type());
+		cgct->emit_class_name(expr->get_type()!=SELF_TYPE?expr->get_type():cgct->cur_method->get_enclosing_class()->get_name());
 		s<<"*\n";
 	}
 }
@@ -2952,6 +2952,16 @@ void no_expr_class::code(ostream &s) {
 }
 
 void object_class::code(ostream &s) {
+	
+	//if self
+	if(name==self) {
+		s<<"\t%"<<new_reg()<<" = bitcast ";
+		cgct->emit_class_name(cgct->cur_method->get_enclosing_class()->get_name());
+		s<<"* %this to ";
+		cgct->emit_class_name(cgct->cur_method->get_enclosing_class()->get_name());
+		s<<"*\n";
+		return;
+	}
 	
 	//search in object_reg_map
 	reg let_reg=cgct->get_reg_from_object(name);
