@@ -1627,10 +1627,15 @@ void assign_class::code(ostream &s) {
 	
 	expr->code(s);
 	
-	reg expr_res=last_reg();
+	reg expr_res=last_reg(), expr_casted_res;
+	s<<"\t%"<<(expr_casted_res=new_reg())<<" = bitcast ";
+	cgct->emit_class_name(expr->get_type());
+	s<<"* %"<<expr_res<<" to ";
+	cgct->emit_class_name(get_type());
+	s<<"*\n";
 	
 	//update object_reg_map, if present
-	if(cgct->update_object_reg_map(name, expr_res))
+	if(cgct->update_object_reg_map(name, expr_casted_res))
 		return;
 	
 	//search in class hierarchy
@@ -1642,13 +1647,7 @@ void assign_class::code(ostream &s) {
 		if(features->nth(i)->is_attr() && ((attr_class*)features->nth(i))->name==name)
 			break;
 	
-	reg casted_this, val_ptr, casted_expr_res;
-	
-	s<<"\t%"<<(casted_expr_res=new_reg())<<" = bitcast ";
-	cgct->emit_class_name(expr->get_type());
-	s<<"* %"<<expr_res<<" to ";
-	cgct->emit_class_name(((attr_class*)features->nth(i))->type_decl);
-	s<<"*\n";
+	reg casted_this, val_ptr;
 	
 	s<<"\t%"<<(casted_this=new_reg())<<" = bitcast ";
 	cgct->emit_class_name(cgct->cur_method->get_enclosing_class()->get_name());
@@ -1662,8 +1661,12 @@ void assign_class::code(ostream &s) {
 	
 	s<<"\tstore ";
 	cgct->emit_class_name(((attr_class*)features->nth(i))->type_decl);
-	s<<"* %"<<casted_expr_res<<", ";
+	s<<"* %"<<expr_casted_res<<", ";
 	cgct->emit_class_name(((attr_class*)features->nth(i))->type_decl);
+	s<<"** %"<<val_ptr<<", align 8\n";
+	
+	s<<"\t%"<<new_reg()<<" = load ";
+	cgct->emit_class_name(get_type());
 	s<<"** %"<<val_ptr<<", align 8\n";
 }
 
@@ -1987,9 +1990,12 @@ void plus_class::code(ostream &s) {
 	s<<"\t%"<<(res_value=new_reg())<<" = add nsw i32 %"<<x_value<<", %"<<y_value<<"\n";
 	
 	//allocate memory to a new Int for sum at 'y+6'
-	s<<"\t%"<<(res_obj=new_reg())<<" = alloca ";
+	reg heap_obj;
+	s<<"\t%"<<(heap_obj=new_reg())<<" = call i8* @_Znwm(i64 "<<cgct->get_class_size(Int)<<")\n";
+	
+	s<<"\t%"<<(res_obj=new_reg())<<" = bitcast i8* %"<<heap_obj<<" to ";
 	cgct->emit_class_name(Int);
-	s<<", align 4\n";
+	s<<"*\n";
 	
 	//get element pointer to value of sum ('y+6') to 'y+7'
 	s<<"\t%"<<(res_pointer=new_reg())<<" = getelementptr inbounds ";
@@ -2053,9 +2059,12 @@ void sub_class::code(ostream &s) {
 	s<<"\t%"<<(res_value=new_reg())<<" = sub nsw i32 %"<<x_value<<", %"<<y_value<<"\n";
 	
 	//allocate memory to a new Int for sum at 'y+6'
-	s<<"\t%"<<(res_obj=new_reg())<<" = alloca ";
+	reg heap_obj;
+	s<<"\t%"<<(heap_obj=new_reg())<<" = call i8* @_Znwm(i64 "<<cgct->get_class_size(Int)<<")\n";
+	
+	s<<"\t%"<<(res_obj=new_reg())<<" = bitcast i8* %"<<heap_obj<<" to ";
 	cgct->emit_class_name(Int);
-	s<<", align 4\n";
+	s<<"*\n";
 	
 	//get element pointer to value of sum ('y+6') to 'y+7'
 	s<<"\t%"<<(res_pointer=new_reg())<<" = getelementptr inbounds ";
@@ -2119,9 +2128,12 @@ void mul_class::code(ostream &s) {
 	s<<"\t%"<<(res_value=new_reg())<<" = mul nsw i32 %"<<x_value<<", %"<<y_value<<"\n";
 	
 	//allocate memory to a new Int for sum at 'y+6'
-	s<<"\t%"<<(res_obj=new_reg())<<" = alloca ";
+	reg heap_obj;
+	s<<"\t%"<<(heap_obj=new_reg())<<" = call i8* @_Znwm(i64 "<<cgct->get_class_size(Int)<<")\n";
+	
+	s<<"\t%"<<(res_obj=new_reg())<<" = bitcast i8* %"<<heap_obj<<" to ";
 	cgct->emit_class_name(Int);
-	s<<", align 4\n";
+	s<<"*\n";
 	
 	//get element pointer to value of sum ('y+6') to 'y+7'
 	s<<"\t%"<<(res_pointer=new_reg())<<" = getelementptr inbounds ";
@@ -2185,9 +2197,12 @@ void divide_class::code(ostream &s) {
 	s<<"\t%"<<(res_value=new_reg())<<" = sdiv i32 %"<<x_value<<", %"<<y_value<<"\n";
 	
 	//allocate memory to a new Int for sum at 'y+6'
-	s<<"\t%"<<(res_obj=new_reg())<<" = alloca ";
+	reg heap_obj;
+	s<<"\t%"<<(heap_obj=new_reg())<<" = call i8* @_Znwm(i64 "<<cgct->get_class_size(Int)<<")\n";
+	
+	s<<"\t%"<<(res_obj=new_reg())<<" = bitcast i8* %"<<heap_obj<<" to ";
 	cgct->emit_class_name(Int);
-	s<<", align 4\n";
+	s<<"*\n";
 	
 	//get element pointer to value of sum ('y+6') to 'y+7'
 	s<<"\t%"<<(res_pointer=new_reg())<<" = getelementptr inbounds ";
@@ -2231,9 +2246,12 @@ void neg_class::code(ostream &s) {
 	
 	s<<"\t%"<<(res_val=new_reg())<<" = sub nsw i32 0, %"<<given_val<<"\n";
 	
-	s<<"\t%"<<(res_obj=new_reg())<<" = alloca ";
+	reg heap_obj;
+	s<<"\t%"<<(heap_obj=new_reg())<<" = call i8* @_Znwm(i64 "<<cgct->get_class_size(Int)<<")\n";
+	
+	s<<"\t%"<<(res_obj=new_reg())<<" = bitcast i8* %"<<heap_obj<<" to ";
 	cgct->emit_class_name(Int);
-	s<<", align 4\n";
+	s<<"*\n";
 	
 	s<<"\t%"<<(res_val_ptr=new_reg())<<" = getelementptr inbounds ";
 	cgct->emit_class_name(Int);
@@ -2292,9 +2310,12 @@ void lt_class::code(ostream &s) {
 	s<<"\t%"<<(res_value=new_reg())<<" = icmp slt i32 %"<<x_value<<", %"<<y_value<<"\n";
 	
 	//allocate memory to a new Bool for result
-	s<<"\t%"<<(res_obj=new_reg())<<" = alloca ";
+	reg heap_obj;
+	s<<"\t%"<<(heap_obj=new_reg())<<" = call i8* @_Znwm(i64 "<<cgct->get_class_size(Bool)<<")\n";
+	
+	s<<"\t%"<<(res_obj=new_reg())<<" = bitcast i8* %"<<heap_obj<<" to ";
 	cgct->emit_class_name(Bool);
-	s<<", align 1\n";
+	s<<"*\n";
 	
 	//get element pointer to value of result
 	s<<"\t%"<<(res_ptr=new_reg())<<" = getelementptr inbounds ";
@@ -2364,9 +2385,13 @@ void leq_class::code(ostream &s) {
 	s<<"\t%"<<(res_value=new_reg())<<" = icmp sle i32 %"<<x_value<<", %"<<y_value<<"\n";
 	
 	//allocate memory to a new Bool for result
-	s<<"\t%"<<(res_obj=new_reg())<<" = alloca ";
+	reg heap_obj;
+	s<<"\t%"<<(heap_obj=new_reg())<<" = call i8* @_Znwm(i64 "<<cgct->get_class_size(Bool)<<")\n";
+	
+	s<<"\t%"<<(res_obj=new_reg())<<" = bitcast i8* %"<<heap_obj<<" to ";
 	cgct->emit_class_name(Bool);
-	s<<", align 1\n";
+	s<<"*\n";
+	
 	
 	//get element pointer to value of result
 	s<<"\t%"<<(res_ptr=new_reg())<<" = getelementptr inbounds ";
@@ -2554,9 +2579,13 @@ void isvoid_class::code(ostream &s) {
 	s<<"* %"<<x<<", null\n";
 	
 	//allocate memory to a new Bool for result
-	s<<"\t%"<<(res_obj=new_reg())<<" = alloca ";
+	reg heap_obj;
+	s<<"\t%"<<(heap_obj=new_reg())<<" = call i8* @_Znwm(i64 "<<cgct->get_class_size(Bool)<<")\n";
+	
+	s<<"\t%"<<(res_obj=new_reg())<<" = bitcast i8* %"<<heap_obj<<" to ";
 	cgct->emit_class_name(Bool);
-	s<<", align 1\n";
+	s<<"*\n";
+	
 	
 	//get element pointer to value of result
 	s<<"\t%"<<(res_ptr=new_reg())<<" = getelementptr inbounds ";
